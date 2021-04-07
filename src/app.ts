@@ -4,9 +4,11 @@ import morgan from "morgan";
 import cors from "cors";
 import "reflect-metadata";
 import { createConnection } from "typeorm";
+import userRouter from "./route/user";
+import cookieParser from "cookie-parser";
 
 const app: express.Application = express();
-const port: number = 3000;
+const port: number = 4000;
 
 createConnection()
   .then(() => {
@@ -15,17 +17,19 @@ createConnection()
   .catch((error) => console.log(error));
 
 app.use(morgan("dev"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
-    origin: "*",
+    origin: "http://localhost:3000",
+    credentials: true,
   })
 );
+app.use(cookieParser());
 
-app.get("/", (req: express.Request, res: express.Response) => {
-  res.json({
-    message: "Hello TypeScript!",
-  });
-});
+app.use("/image", express.static("image"));
+
+app.use("/user", userRouter);
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);

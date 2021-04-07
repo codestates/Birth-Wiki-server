@@ -16,15 +16,15 @@ export class User extends BaseEntity {
   id: number;
 
   @Column()
-  userId: string;
+  userEmail: string;
 
-  @Column()
+  @Column({ nullable: true })
   nickName: string;
 
-  @Column()
+  @Column({ nullable: true })
   password: string;
 
-  @Column()
+  @Column({ nullable: true })
   profileImage: string;
 
   @OneToMany((type) => Card, (card) => card.user)

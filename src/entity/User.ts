@@ -8,7 +8,7 @@ import {
   OneToMany,
 } from "typeorm";
 import { Card } from "./Card";
-import { Wiki } from "./Wiki";
+import { Wiki_date } from "./Wiki_date";
 
 @Entity()
 export class User extends BaseEntity {
@@ -27,10 +27,10 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   profileImage: string;
 
-  @OneToMany((type) => Card, (card) => card.user)
+  @OneToMany(() => Card, (card) => card.user)
   cards: Card[];
 
-  @ManyToMany(() => Wiki, { cascade: true })
+  @ManyToMany(() => Wiki_date, { cascade: true })
   @JoinTable({
     name: "user_wiki_like",
     joinColumn: {
@@ -42,5 +42,5 @@ export class User extends BaseEntity {
       referencedColumnName: "id",
     },
   })
-  wikis: Wiki[];
+  wikis: Wiki_date[];
 }

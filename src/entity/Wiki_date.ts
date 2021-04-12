@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToMany } from "
 import { User } from './User'
 
 @Entity()
-export class Wiki extends BaseEntity {
+export class Wiki_date extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -10,13 +10,10 @@ export class Wiki extends BaseEntity {
   date: string;
 
   @Column()
-  field: string;
+  fieldName: string;
 
   @Column()
-  fieldImg: string;
-
-  @Column()
-  fieldDesc: string;
+  image: string;
 
   @ManyToMany(() => User, { cascade: true })
   users: User[]

@@ -11,7 +11,7 @@ const app: express.Application = express();
 const port: number = 4000;
 
 createConnection()
-  .then(() => {
+  .then(async () => {
     console.log("connected");
   })
   .catch((error) => console.log(error));

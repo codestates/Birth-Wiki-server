@@ -1,7 +1,7 @@
 import axios from "axios";
 import cheerio from "cheerio";
 
-const wiki = async (mm: number, dd: number): Promise<any> => {
+const wiki = async (): Promise<any> => {
   const trimData = (arr: string[]): (string | string[])[] => {
     return arr.map((el: string) => {
       let target: string[] = el.split(" - ");
@@ -42,24 +42,34 @@ const wiki = async (mm: number, dd: number): Promise<any> => {
     return result;
   };
 
-  const date = encodeURI(`${mm}월_${dd}일`);
+  const saveData = (arr: (string | string[])[][]): void => {};
+  let date = 1;
 
-  const data = await axios.get(`https://ko.wikipedia.org/wiki/${date}`);
+  while (date === 1) {
+    let curDate = new Date(2020, 0, date);
+    let targetDate = encodeURI(
+      `${curDate.getMonth() + 1}월_${curDate.getDate()}일`
+    );
+    let result = [];
 
-  const result = [];
-  const $ = cheerio.load(data.data);
-  $("ul", ".mw-parser-output").each((idx, el) => {
-    if (!isNaN(Number($(el).text()[0]))) {
-      result.push($(el).text());
-    }
-  });
+    let wiki_scrape = await axios.get(
+      `https://ko.wikipedia.org/wiki/${targetDate}`
+    );
 
-  let issue = mergeData(trimData(result[1].split("\n")));
-  let culture = mergeData(trimData(result[2].split("\n")));
-  let birth = mergeData(trimData(result[3].split("\n")));
-  let death = mergeData(trimData(result[4].split("\n")));
+    let $ = cheerio.load(wiki_scrape.data);
+    $("ul", ".mw-parser-output").each((idx, el) => {
+      if (!isNaN(Number($(el).text()[0]))) {
+        result.push($(el).text());
+      }
+    });
 
-  return { issue, culture, birth, death };
+    let issue = mergeData(trimData(result[1].split("\n")));
+    let culture = mergeData(trimData(result[2].split("\n")));
+    let birth = mergeData(trimData(result[3].split("\n")));
+    let death = mergeData(trimData(result[4].split("\n")));
+
+    date++;
+  }
 };
 
-export = wiki
+export = wiki;

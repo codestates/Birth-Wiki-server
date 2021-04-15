@@ -61,13 +61,13 @@ const coverImg = async (): Promise<any> => {
       },
     });
 
-    for (let i = 0; i < 30; i++) {
+    for (let j = 0; j < 29; j++) {
       result.push({
-        music: music.data.results[i].urls["regular"],
-        movie: movie.data.results[i].urls["regular"],
-        issue: news.data.results[i].urls["regular"],
-        birth: baby.data.results[i].urls["regular"],
-        death: dark.data.results[i].urls["regular"],
+        music: music.data.results[j].urls["regular"],
+        movie: movie.data.results[j].urls["regular"],
+        issue: news.data.results[j].urls["regular"],
+        birth: baby.data.results[j].urls["regular"],
+        death: dark.data.results[j].urls["regular"],
       });
     }
   }

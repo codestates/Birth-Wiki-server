@@ -7,7 +7,7 @@ import {
   JoinTable,
   OneToMany,
 } from "typeorm";
-import { Card } from "./Card";
+import { ActionCard } from "./actionCard";
 import { Wiki_date } from "./Wiki_date";
 
 @Entity()
@@ -27,8 +27,8 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   profileImage: string;
 
-  @OneToMany(() => Card, (card) => card.user)
-  cards: Card[];
+  @OneToMany(() => ActionCard, (card) => card.user)
+  cards: ActionCard[];
 
   @ManyToMany(() => Wiki_date, { cascade: true })
   @JoinTable({

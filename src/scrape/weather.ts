@@ -1,8 +1,9 @@
 import axios from "axios";
 import cheerio from "cheerio";
 import iconv from "iconv-lite";
+import { BirthWiki_daily } from "../entity/BirthWiki_daily";
 
-const weather = async (yyyy: number, mm: number, dd: number): Promise<any> => {
+const weather = async (year: number, month: number): Promise<any> => {
   const area = `stn=108`;
 
   const discWeather = (text: string): string => {
@@ -63,38 +64,73 @@ const weather = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     return stoneData;
   };
 
-  const W_scrape = await axios({
-    url: `http://www.weather.go.kr/weather/climate/past_cal.jsp?${area}&yy=${yyyy}&mm=${mm}&obs=9`,
-    method: "GET",
-    responseType: "arraybuffer",
-  });
+  const saveData = async (refineData: [string, string, object[]][]) => {
+    let curYear = new Date().getFullYear();
+    let curMonth = new Date().getMonth() + 1;
+    let curDay = new Date().getDate();
 
-  const T_scrape = await axios({
-    url: `http://www.weather.go.kr/weather/climate/past_cal.jsp?${area}&yy=${yy}&mm=${mm}&obs=1`,
-    method: "GET",
-    responseType: "arraybuffer",
-  });
+    for (let i = 0; i < refineData.length; i++) {
+      let day: string = refineData[i][0];
+      let pheno: string = refineData[i][1];
+      let tempStr: string = JSON.stringify(refineData[i][2]);
 
-  let W_stoneData = htmlDecode(W_scrape.data);
-  let T_stoneData = htmlDecode(T_scrape.data);
-  let refineData = [];
-
-  for (let i = 0; i < W_stoneData.length; i = i + 2) {
-    let date = W_stoneData[i].split("\n");
-    let weat = W_stoneData[i + 1].split("\n");
-    let temp = T_stoneData[i + 1].split("\n");
-
-    date.forEach((el, idx) => {
-      let date = el.trim();
-
-      if (date !== "") {
-        refineData.push([
-          date,
-          discWeather(weat[idx].trim()),
-          discTemperature(temp[idx].trim()),
-        ]);
+      if (`${year}-${month}-${day}` === `${curYear}-${curMonth}-${curDay}`) {
+        break;
       }
+
+      try {
+        const oneCase = new BirthWiki_daily();
+        oneCase.date = `${year}-${month}-${day}`;
+        oneCase.weather = pheno;
+        oneCase.temperature = tempStr;
+        await oneCase.save();
+      } catch {
+        console.log("저장 중 에러");
+      }
+    }
+  };
+
+  try {
+    const W_scrape = await axios({
+      url: `http://www.weather.go.kr/weather/climate/past_cal.jsp?${area}&yy=${year}&mm=${month}&obs=9`,
+      method: "GET",
+      responseType: "arraybuffer",
     });
+
+    const T_scrape = await axios({
+      url: `http://www.weather.go.kr/weather/climate/past_cal.jsp?${area}&yy=${year}&mm=${month}&obs=1`,
+      method: "GET",
+      responseType: "arraybuffer",
+    });
+
+    let W_stoneData = htmlDecode(W_scrape.data);
+    let T_stoneData = htmlDecode(T_scrape.data);
+    let refineData: [string, string, object[]][] = [];
+
+    for (let i = 0; i < W_stoneData.length; i = i + 2) {
+      let monthly = W_stoneData[i].split("\n");
+      let weat = W_stoneData[i + 1].split("\n");
+      let temp = T_stoneData[i + 1].split("\n");
+
+      monthly.forEach((el, idx) => {
+        let date = el.trim();
+
+        if (date !== "") {
+          refineData.push([
+            date.slice(0, date.length - 1),
+            discWeather(weat[idx].trim()),
+            discTemperature(temp[idx].trim()),
+          ]);
+        }
+      });
+    }
+
+    await saveData(refineData);
+    console.log("completed seed weather", year, month);
+  } catch (e) {
+    console.log("에러날짜", year, month);
+    console.log(e);
+    console.log("에러날짜", year, month);
   }
 };
 

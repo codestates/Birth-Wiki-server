@@ -13,9 +13,9 @@ export class Wiki_death extends BaseEntity {
   id: number;
 
   @Column()
-  year: number;
+  year: string;
 
-  @Column()
+  @Column("text")
   event: string;
 
   @ManyToOne(() => Wiki_date, { cascade: true })

@@ -5,6 +5,7 @@ import cors from "cors";
 import "reflect-metadata";
 import { createConnection } from "typeorm";
 import userRouter from "./route/user";
+import dataRouter from "./route/data";
 import cookieParser from "cookie-parser";
 
 const app: express.Application = express();
@@ -30,6 +31,11 @@ app.use(cookieParser());
 app.use("/image", express.static("image"));
 
 app.use("/user", userRouter);
+app.use("/data", dataRouter);
+
+app.get("/", (req, res) => {
+  res.send("hello world");
+});
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);

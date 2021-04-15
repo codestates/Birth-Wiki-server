@@ -20,7 +20,7 @@ export = async (req, res) => {
     }
     await user.save();
 
-    res.send("signup!");
+    res.send({ message: "signUp" });
   } catch {
     res.status(400).send({ message: "something wrong" });
   }

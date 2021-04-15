@@ -6,7 +6,7 @@ export class BirthWiki_weekly extends BaseEntity {
   id: number;
 
   @Column({ nullable: true })
-  weekly: number;
+  weekly: string;
 
   @Column({ nullable: true })
   WS_title: string;

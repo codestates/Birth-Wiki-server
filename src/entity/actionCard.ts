@@ -8,7 +8,7 @@ import {
 import { User } from "./User";
 
 @Entity()
-export class Card extends BaseEntity {
+export class ActionCard extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

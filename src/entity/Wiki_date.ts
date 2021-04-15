@@ -12,7 +12,7 @@ export class Wiki_date extends BaseEntity {
   @Column()
   fieldName: string;
 
-  @Column()
+  @Column({nullable: true})
   image: string;
 
   @ManyToMany(() => User, { cascade: true })

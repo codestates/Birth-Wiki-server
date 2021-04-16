@@ -1,12 +1,12 @@
 import axios from "axios";
 import cheerio from "cheerio";
+import { getRepository } from "typeorm";
 import { Wiki_birth } from "../entity/Wiki_birth";
-import { Wiki_date } from "../entity/Wiki_date";
+import { Wiki_daily } from "../entity/Wiki_daily";
 import { Wiki_death } from "../entity/Wiki_death";
 import { Wiki_issue } from "../entity/Wiki_issue";
-import { image } from "../types";
 
-const wiki = async (date: number, publicImg: image) => {
+const wiki = async (date: number) => {
   const trimData = (arr: string[]): string[][] => {
     let result: string[][] = [];
 
@@ -105,21 +105,25 @@ const wiki = async (date: number, publicImg: image) => {
     return result;
   };
 
-  const saveData = async (category: [string?, string[]?][], dateId: number) => {
+  const saveData = async (
+    eventArr: [string?, string[]?][],
+    dateId: Wiki_daily,
+    category: string
+  ) => {
     try {
-      for (let yearly of category) {
+      for (let yearly of eventArr) {
         const year: string = yearly[0];
         const events: string = JSON.stringify(yearly[1]);
 
         let oneCase;
-        switch (dateId % 5) {
-          case 1:
+        switch (category) {
+          case "issue":
             oneCase = new Wiki_issue();
             break;
-          case 2:
+          case "birth":
             oneCase = new Wiki_birth();
             break;
-          case 3:
+          case "death":
             oneCase = new Wiki_death();
             break;
         }
@@ -210,43 +214,27 @@ const wiki = async (date: number, publicImg: image) => {
       issue_culture = culture.slice();
     }
 
-    const issueDate = new Wiki_date();
-    issueDate.date = `${curMonth}-${curDate}`;
-    issueDate.fieldName = "issue";
-    issueDate.image = publicImg.issue
-    await issueDate.save();
+    const dailyIssue = await getRepository(Wiki_daily)
+      .createQueryBuilder("wiki_daily")
+      .where("wiki_daily.date = :date", { date: `${curMonth}-${curDate}` })
+      .andWhere("wiki_daily.fieldName = :fieldName", { fieldName: "issue" })
+      .getOne();
 
-    const birthDate = new Wiki_date();
-    birthDate.date = `${curMonth}-${curDate}`;
-    birthDate.fieldName = "birth";
-    birthDate.image = publicImg.birth;
-    await birthDate.save();
+    const dailyBirth = await getRepository(Wiki_daily)
+      .createQueryBuilder("wiki_daily")
+      .where("wiki_daily.date = :date", { date: `${curMonth}-${curDate}` })
+      .andWhere("wiki_daily.fieldName = :fieldName", { fieldName: "birth" })
+      .getOne();
 
-    const deathDate = new Wiki_date();
-    deathDate.date = `${curMonth}-${curDate}`;
-    deathDate.fieldName = "death";
-    deathDate.image = publicImg.death;
-    await deathDate.save();
+    const dailyDeath = await getRepository(Wiki_daily)
+      .createQueryBuilder("wiki_daily")
+      .where("wiki_daily.date = :date", { date: `${curMonth}-${curDate}` })
+      .andWhere("wiki_daily.fieldName = :fieldName", { fieldName: "death" })
+      .getOne();
 
-    const musicDate = new Wiki_date();
-    musicDate.date = `${curMonth}-${curDate}`;
-    musicDate.fieldName = "music";
-    musicDate.image = publicImg.music;
-    await musicDate.save();
-
-    const movieDate = new Wiki_date();
-    movieDate.date = `${curMonth}-${curDate}`;
-    movieDate.fieldName = "movie";
-    movieDate.image = publicImg.movie;
-    await movieDate.save();
-
-    const issueDateId: number = issueDate.id;
-    const birthDateId: number = birthDate.id;
-    const deathDateId: number = deathDate.id;
-
-    await saveData(issue_culture, issueDateId);
-    await saveData(birth, birthDateId);
-    await saveData(death, deathDateId);
+    await saveData(issue_culture, dailyIssue, "issue");
+    await saveData(birth, dailyBirth, "birth");
+    await saveData(death, dailyDeath, "death");
 
     console.log("completed seed wiki", date);
   } catch (e) {

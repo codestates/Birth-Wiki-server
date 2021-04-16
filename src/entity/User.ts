@@ -7,9 +7,9 @@ import {
   JoinTable,
   OneToMany,
 } from "typeorm";
-import { ActionCard } from "./actionCard";
-import { Wiki_date } from "./Wiki_date";
-
+import { RecordCard } from "./RecordCard";
+import { Wiki_daily } from "./Wiki_daily";
+import { Wiki_weekly } from "./Wiki_weekly";
 @Entity()
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
@@ -27,12 +27,12 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   profileImage: string;
 
-  @OneToMany(() => ActionCard, (card) => card.user)
-  cards: ActionCard[];
+  @OneToMany(() => RecordCard, (card) => card.user)
+  cards: RecordCard[];
 
-  @ManyToMany(() => Wiki_date, { cascade: true })
+  @ManyToMany(() => Wiki_daily, { cascade: true })
   @JoinTable({
-    name: "user_wiki_like",
+    name: "user_like_daily",
     joinColumn: {
       name: "userId",
       referencedColumnName: "id",
@@ -42,5 +42,19 @@ export class User extends BaseEntity {
       referencedColumnName: "id",
     },
   })
-  wikis: Wiki_date[];
+  dailys: Wiki_daily[];
+
+  @ManyToMany(() => Wiki_weekly, { cascade: true })
+  @JoinTable({
+    name: "user_like_weekly",
+    joinColumn: {
+      name: "userId",
+      referencedColumnName: "id",
+    },
+    inverseJoinColumn: {
+      name: "wikiId",
+      referencedColumnName: "id",
+    },
+  })
+  weeklys: Wiki_daily[];
 }

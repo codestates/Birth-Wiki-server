@@ -1,7 +1,8 @@
 import axios from "axios";
 import cheerio from "cheerio";
 import { getRepository } from "typeorm";
-import { BirthWiki_weekly } from "../entity/BirthWiki_weekly";
+import { Wiki_movie } from "../entity/Wiki_movie";
+import { Wiki_weekly } from "../entity/Wiki_weekly";
 
 const WMovie = async (yyyy: number): Promise<any> => {
   const getPoster = async (title, realTitle, count) => {
@@ -69,6 +70,29 @@ const WMovie = async (yyyy: number): Promise<any> => {
     }
   };
 
+  const weekCount = (yyyy, mm, dd) => {
+    let today = new Date(yyyy, mm - 1, dd);
+    let countDay = new Date(yyyy, 0, 1);
+    let week = 1;
+    while (today > countDay) {
+      countDay.setDate(countDay.getDate() + 1);
+      let countNum = countDay.getDay();
+      if (countNum == 0) {
+        week++;
+      }
+    }
+
+    return week < 10 ? "0" + week : "" + week;
+  };
+
+  const getDate = (yyyy: number, weekly: number) => {
+    let firstDate = new Date(yyyy, 0, 1);
+    while (firstDate.getDay() !== 5) {
+      firstDate.setDate(firstDate.getDate() + 1);
+    }
+    return firstDate.getDate() + (weekly - 1) * 7;
+  };
+
   try {
     const W_movie = await axios({
       url: `https://www.boxofficemojo.com/weekly/by-year/${yyyy}/`,
@@ -76,7 +100,7 @@ const WMovie = async (yyyy: number): Promise<any> => {
 
     const $ = cheerio.load(W_movie.data);
     const stone = [];
-    const refineData = [];
+    const refineData: [number?, string?][] = [];
 
     $("a", "td").each((idx, el) => {
       stone.push($(el).text());
@@ -84,40 +108,40 @@ const WMovie = async (yyyy: number): Promise<any> => {
 
     stone.forEach((el, idx) => {
       if (idx % 3 === 0) {
-        if (Number(stone[idx + 2]) < 10) {
-          refineData.push([yyyy + "0" + stone[idx + 2], stone[idx + 1]]);
-        } else {
-          refineData.push([yyyy + "" + stone[idx + 2], stone[idx + 1]]);
-        }
+        refineData.push([
+          getDate(yyyy, Number(stone[idx + 2])),
+          stone[idx + 1],
+        ]);
       }
     });
 
     for (let weeklyData of refineData) {
-      let weekly = weeklyData[0];
+      let weekly: string = yyyy + weekCount(yyyy, 1, weeklyData[0]);
       let title = weeklyData[1];
-      let existPoster = await getRepository(BirthWiki_weekly)
-        .createQueryBuilder("birth_wiki_weekly")
-        .where("birth_wiki_weekly.WM_title = :WM_title", { WM_title: title })
+      let existPoster = await getRepository(Wiki_movie)
+        .createQueryBuilder("wiki_movie")
+        .where("wiki_movie.title = :title", { title })
         .getOne();
       let poster;
 
       existPoster
-        ? (poster = existPoster.WM_poster)
+        ? (poster = existPoster.poster)
         : (poster = await getPoster(title, title, 0));
 
-      let oneCase = await getRepository(BirthWiki_weekly)
-        .createQueryBuilder("birth_wiki_weekly")
-        .where("birth_wiki_weekly.weekly = :weekly", { weekly: weekly })
+      let weeklyId = await getRepository(Wiki_weekly)
+        .createQueryBuilder("wiki_weekly")
+        .where("wiki_weekly.date = :date", { date: weekly })
+        .andWhere("wiki_weekly.fieldName = :fieldName", { fieldName: "movie" })
         .getOne();
 
-      if (!oneCase) {
-        oneCase = new BirthWiki_weekly();
-        oneCase.weekly = weekly;
-      }
-      oneCase.WM_title = title;
-      oneCase.WM_poster = poster;
+      let oneCase = new Wiki_movie();
+      oneCase.source = "world";
+      oneCase.title = title;
+      oneCase.poster = poster;
+      oneCase.date = weeklyId;
       await oneCase.save();
     }
+
     console.log("completed seed Wmovie", yyyy);
   } catch (e) {
     console.log("에러연도", yyyy);

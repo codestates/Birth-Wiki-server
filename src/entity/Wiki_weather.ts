@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm";
 
 @Entity()
-export class BirthWiki_daily extends BaseEntity {
+export class Wiki_weather extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

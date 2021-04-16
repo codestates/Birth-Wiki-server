@@ -1,0 +1,3 @@
+export = {
+  like: require("./like"),
+};

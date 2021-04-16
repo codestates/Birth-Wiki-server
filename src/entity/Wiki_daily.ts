@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToMany } from "
 import { User } from './User'
 
 @Entity()
-export class Wiki_date extends BaseEntity {
+export class Wiki_daily extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

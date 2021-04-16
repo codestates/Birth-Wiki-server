@@ -18,23 +18,26 @@ const weeklyImg = async (): Promise<any> => {
     return week < 10 ? "0" + week : "" + week;
   };
 
-  for (let i = 1; i <= 114; i++) {
+  for (let i = 1; i <= 132; i++) {
     let key;
-    switch (Math.floor(i / 24)) {
+    switch (Math.floor(i / 23)) {
       case 0:
-        key = process.env.UNSPLASH1;
-        break;
-      case 1:
         key = process.env.UNSPLASH2;
         break;
-      case 2:
+      case 1:
         key = process.env.UNSPLASH3;
         break;
-      case 3:
+      case 2:
         key = process.env.UNSPLASH4;
         break;
-      case 4:
+      case 3:
         key = process.env.UNSPLASH5;
+        break;
+      case 4:
+        key = process.env.UNSPLASH6;
+        break;
+      case 5:
+        key = process.env.UNSPLASH7;
         break;
     }
 
@@ -58,24 +61,26 @@ const weeklyImg = async (): Promise<any> => {
       },
     });
 
-    for (let j = 0; j < 29; j++) {
-      let curYear = new Date(1958, 7, (i - 1) * 203 + 4 + j * 7).getFullYear();
-      let curMonth = new Date(1958, 7, (i - 1) * 203 + 4 + j * 7).getMonth() + 1;
-      let curDay = new Date(1958, 7, (i - 1) * 203 + 4 + j * 7).getDate();
+    for (let j = 0; j < 25; j++) {
+      let curYear = new Date(1958, 7, (i - 1) * 175 + 4 + j * 7).getFullYear();
+      let curMonth =
+        new Date(1958, 7, (i - 1) * 175 + 4 + j * 7).getMonth() + 1;
+      let curDay = new Date(1958, 7, (i - 1) * 175 + 4 + j * 7).getDate();
       let curWeek: string = curYear + weekCount(curYear, curMonth, curDay);
 
-      const movie = new Wiki_weekly()
-      movie.date = curWeek
-      movie.fieldName = 'movie'
-      movie.image = film.data.results[j].urls["regular"]
-      await movie.save()
+      const movie = new Wiki_weekly();
+      movie.date = curWeek;
+      movie.fieldName = "movie";
+      movie.image = film.data.results[j].urls["regular"];
+      await movie.save();
 
-      const music = new Wiki_weekly()
-      music.date = curWeek
-      music.fieldName = 'music'
-      music.image = film.data.results[j].urls["regular"]
-      await music.save()
+      const music = new Wiki_weekly();
+      music.date = curWeek;
+      music.fieldName = "music";
+      music.image = film.data.results[j].urls["regular"];
+      await music.save();
     }
+    console.log("completed seed weekly page", i);
   }
 };
 

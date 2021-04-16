@@ -3,7 +3,7 @@ import { Wiki_daily } from "../entity/Wiki_daily";
 import("dotenv/config");
 
 const dailyImg = async (): Promise<any> => {
-  let key = process.env.UNSPLASH6;
+  let key = process.env.UNSPLASH1;
 
   for (let i = 1; i <= 13; i++) {
     const news = await axios({
@@ -62,6 +62,7 @@ const dailyImg = async (): Promise<any> => {
         break;
       }
     }
+    console.log('completed seed daily page', i)
   }
 };
 

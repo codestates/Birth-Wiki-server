@@ -16,7 +16,8 @@ const seed = async () => {
     let curYear = new Date().getFullYear();
     let curMonth = new Date().getMonth() + 1;
     let curDay = new Date().getDate();
-    let lastWeek = new Date(curYear, curMonth, curDay - 7).getTime();
+    let lastWeek = new Date(curYear, curMonth - 1, curDay - 7).getTime();
+
     let publicIMG: image[] = await coverImg();
 
     for (let i = 1; i < 367; i++) {

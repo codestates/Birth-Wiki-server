@@ -43,19 +43,19 @@ const dailyImg = async (): Promise<any> => {
       const issue = new Wiki_daily();
       issue.date = curMonth + "-" + curDay;
       issue.fieldName = "issue";
-      issue.image = news.data.results[j].urls["regular"];
+      issue.image = news.data.results[j - 1].urls["regular"];
       await issue.save();
 
       const birth = new Wiki_daily();
       birth.date = curMonth + "-" + curDay;
       birth.fieldName = "birth";
-      birth.image = baby.data.results[j].urls["regular"];
+      birth.image = baby.data.results[j - 1].urls["regular"];
       await birth.save();
 
       const death = new Wiki_daily();
       death.date = curMonth + "-" + curDay;
       death.fieldName = "death";
-      death.image = dark.data.results[j].urls["regular"];
+      death.image = dark.data.results[j - 1].urls["regular"];
       await death.save();
 
       if (curMonth === 12 && curDay === 31) {

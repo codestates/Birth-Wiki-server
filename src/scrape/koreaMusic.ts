@@ -1,7 +1,8 @@
 import axios from "axios";
 import cheerio from "cheerio";
 import { getRepository } from "typeorm";
-import { BirthWiki_weekly } from "../entity/BirthWiki_weekly";
+import { Wiki_music } from "../entity/Wiki_music";
+import { Wiki_weekly } from "../entity/Wiki_weekly";
 
 const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
   const weekCount = (yyyy, mm, dd) => {
@@ -47,7 +48,7 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     }
   };
 
-  const weekly: string = yyyy + weekCount(yyyy, mm, dd);
+  const weekly: string = weekCount(yyyy, mm, dd);
 
   try {
     const K_music = await axios({
@@ -66,18 +67,18 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     const singer = respon.trim().split("\n")[1].trim().split("|")[0];
     const poster = await getPoster(title, singer);
 
-    let oneCase = await getRepository(BirthWiki_weekly)
-      .createQueryBuilder("birth_wiki_weekly")
-      .where("birth_wiki_weekly.weekly = :weekly", { weekly: weekly })
+    let weeklyId = await getRepository(Wiki_weekly)
+      .createQueryBuilder("wiki_weekly")
+      .where("wiki_weekly.date = :date", { date: `${yyyy}${weekly}` })
+      .andWhere("wiki_weekly.fieldName = :fieldName", { fieldName: "music" })
       .getOne();
 
-    if (!oneCase) {
-      oneCase = new BirthWiki_weekly();
-      oneCase.weekly = weekly;
-    }
-    oneCase.KS_title = title;
-    oneCase.KS_singer = singer;
-    oneCase.KS_poster = poster;
+    let oneCase = new Wiki_music();
+    oneCase.source = "korea";
+    oneCase.title = title;
+    oneCase.singer = singer;
+    oneCase.poster = poster;
+    oneCase.date = weeklyId;
     await oneCase.save();
 
     console.log("completed seed Kmusic", yyyy + weekly);

@@ -1,10 +1,26 @@
 import axios from "axios";
 import cheerio from "cheerio";
 import { getRepository } from "typeorm";
-import { BirthWiki_weekly } from "../entity/BirthWiki_weekly";
+import { Wiki_movie } from "../entity/Wiki_movie";
+import { Wiki_weekly } from "../entity/Wiki_weekly";
 import("dotenv/config");
 
 const KMovie = async (yyyy: number, mm: number, dd: number): Promise<any> => {
+  const weekCount = (yyyy, mm, dd) => {
+    let today = new Date(yyyy, mm - 1, dd);
+    let countDay = new Date(yyyy, 0, 1);
+    let week = 1;
+    while (today > countDay) {
+      countDay.setDate(countDay.getDate() + 1);
+      let countNum = countDay.getDay();
+      if (countNum == 0) {
+        week++;
+      }
+    }
+
+    return week < 10 ? "0" + week : "" + week;
+  };
+
   const getPoster = async (title, realTitle, count) => {
     let movie_href;
     let posterURL = "https://www.themoviedb.org";
@@ -85,29 +101,29 @@ const KMovie = async (yyyy: number, mm: number, dd: number): Promise<any> => {
       },
     });
 
-    let weekly = K_movie.data.boxOfficeResult.yearWeekTime;
+    let weekly: string = yyyy + weekCount(yyyy, mm, dd);
     let title = K_movie.data.boxOfficeResult.weeklyBoxOfficeList[0].movieNm;
-    let existPoster = await getRepository(BirthWiki_weekly)
-      .createQueryBuilder("birth_wiki_weekly")
-      .where("birth_wiki_weekly.KM_title = :KM_title", { KM_title: title })
+    let existPoster = await getRepository(Wiki_movie)
+      .createQueryBuilder("wiki_movie")
+      .where("wiki_movie.title = :title", { title })
       .getOne();
     let poster;
 
     existPoster
-      ? (poster = existPoster.KM_poster)
+      ? (poster = existPoster.poster)
       : (poster = await getPoster(title, title, 0));
 
-    let oneCase = await getRepository(BirthWiki_weekly)
-      .createQueryBuilder("birth_wiki_weekly")
-      .where("birth_wiki_weekly.weekly = :weekly", { weekly: weekly })
+    let weeklyId = await getRepository(Wiki_weekly)
+      .createQueryBuilder("wiki_weekly")
+      .where("wiki_weekly.date = :date", { date: weekly })
+      .andWhere("wiki_weekly.fieldName = :fieldName", { fieldName: "movie" })
       .getOne();
 
-    if (!oneCase) {
-      oneCase = new BirthWiki_weekly();
-      oneCase.weekly = weekly;
-    }
-    oneCase.KM_title = title;
-    oneCase.KM_poster = poster;
+    let oneCase = new Wiki_movie();
+    oneCase.source = "korea";
+    oneCase.title = title;
+    oneCase.poster = poster;
+    oneCase.date = weeklyId;
     await oneCase.save();
 
     console.log("completed seed Kmovie", weekly);

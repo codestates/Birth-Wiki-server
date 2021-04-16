@@ -1,10 +1,11 @@
 import axios from "axios";
 import cheerio from "cheerio";
 import { getRepository } from "typeorm";
-import { BirthWiki_weekly } from "../entity/BirthWiki_weekly";
+import { Wiki_music } from "../entity/Wiki_music";
+import { Wiki_weekly } from "../entity/Wiki_weekly";
 
 const WMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
-  const weekCount = (yyyy, mm, dd) => {
+  const weekCount = (yyyy, mm, dd): string => {
     let today = new Date(yyyy, mm - 1, dd);
     let countDay = new Date(yyyy, 0, 1);
     let week = 1;
@@ -16,10 +17,10 @@ const WMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
       }
     }
 
-    return week < 10 ? "0" + week : week;
+    return week < 10 ? "0" + week : "" + week;
   };
 
-  const weekly = String(yyyy) + weekCount(yyyy, mm, dd);
+  const weekly: string = String(yyyy) + weekCount(yyyy, mm, dd);
   const month = mm < 10 ? "0" + mm : mm;
   const day = dd < 10 ? "0" + dd : dd;
   const date = `${yyyy}-${month}-${day}`;
@@ -47,18 +48,18 @@ const WMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
       ? (poster = poster.replace("53x53", "155x155"))
       : (poster = poster);
 
-    let oneCase = await getRepository(BirthWiki_weekly)
-      .createQueryBuilder("birth_wiki_weekly")
-      .where("birth_wiki_weekly.weekly = :weekly", { weekly: weekly })
+    let weeklyId = await getRepository(Wiki_weekly)
+      .createQueryBuilder("wiki_weekly")
+      .where("wiki_weekly.date = :date", { date: weekly })
+      .andWhere("wiki_weekly.fieldName = :fieldName", { fieldName: "music" })
       .getOne();
 
-    if (!oneCase) {
-      oneCase = new BirthWiki_weekly();
-      oneCase.weekly = weekly;
-    }
-    oneCase.WS_title = title;
-    oneCase.WS_singer = singer;
-    oneCase.WS_poster = poster;
+    let oneCase = new Wiki_music();
+    oneCase.source = "world";
+    oneCase.title = title;
+    oneCase.singer = singer;
+    oneCase.poster = poster;
+    oneCase.date = weeklyId;
     await oneCase.save();
 
     console.log("completed seed Wmusic", weekly);

@@ -1,7 +1,7 @@
 import axios from "axios";
 import cheerio from "cheerio";
 import iconv from "iconv-lite";
-import { BirthWiki_daily } from "../entity/BirthWiki_daily";
+import { Wiki_weather } from "../entity/Wiki_weather";
 
 const weather = async (year: number, month: number): Promise<any> => {
   const area = `stn=108`;
@@ -79,7 +79,7 @@ const weather = async (year: number, month: number): Promise<any> => {
       }
 
       try {
-        const oneCase = new BirthWiki_daily();
+        const oneCase = new Wiki_weather();
         oneCase.date = `${year}-${month}-${day}`;
         oneCase.weather = pheno;
         oneCase.temperature = tempStr;

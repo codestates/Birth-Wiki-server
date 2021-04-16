@@ -5,7 +5,7 @@ import {
   BaseEntity,
   ManyToOne,
 } from "typeorm";
-import { Wiki_date } from "./Wiki_date";
+import { Wiki_daily } from "./Wiki_daily";
 
 @Entity()
 export class Wiki_birth extends BaseEntity {
@@ -18,6 +18,6 @@ export class Wiki_birth extends BaseEntity {
   @Column("text")
   event: string;
 
-  @ManyToOne(() => Wiki_date, { cascade: true })
-  date: Wiki_date;
+  @ManyToOne(() => Wiki_daily, { cascade: true })
+  date: Wiki_daily;
 }

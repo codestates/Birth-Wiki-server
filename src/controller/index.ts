@@ -1,6 +1,7 @@
 const con = {
   userController: require("./user"),
-  dataController: require("./data")
+  dataController: require("./data"),
+  likeController: require("./like")
 }
 
 export = con

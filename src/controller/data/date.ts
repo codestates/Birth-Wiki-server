@@ -1,12 +1,13 @@
 import { createQueryBuilder, getRepository } from "typeorm";
-import { BirthWiki_daily } from "../../entity/BirthWiki_daily";
-import { BirthWiki_weekly } from "../../entity/BirthWiki_weekly";
-import { ActionCard } from "../../entity/actionCard";
+import { Wiki_weather } from "../../entity/Wiki_weather";
+import { Wiki_weekly } from "../../entity/Wiki_weekly";
+import { RecordCard } from "../../entity/RecordCard";
 import { Wiki_birth } from "../../entity/Wiki_birth";
-import { Wiki_date } from "../../entity/Wiki_date";
+import { Wiki_daily } from "../../entity/Wiki_daily";
 import { Wiki_death } from "../../entity/Wiki_death";
 import { Wiki_issue } from "../../entity/Wiki_issue";
-import { response } from "express";
+import { Wiki_movie } from "../../entity/Wiki_movie";
+import { Wiki_music } from "../../entity/Wiki_music";
 
 export = async (req, res) => {
   const { date, nickName, accessToken } = req.body;
@@ -26,7 +27,7 @@ export = async (req, res) => {
     return week < 10 ? "0" + week : week;
   };
 
-  const getData = async (field: string, dateId: number, img: string) => {
+  const getDaily = async (field: string, dateId: number, img: string) => {
     let repo;
     switch (field) {
       case "issue":
@@ -59,65 +60,82 @@ export = async (req, res) => {
     }
   };
 
+  const getWeekly = async (field: string, dateId: number, img: string) => {
+    let repo;
+    switch (field) {
+      case "movie":
+        repo = Wiki_movie;
+        break;
+      case "music":
+        repo = Wiki_music;
+        break;
+    }
+
+    try {
+      const data: [string, [string, string]?] = [img];
+      const stone: any[] = await getRepository(repo)
+        .createQueryBuilder(`wiki_${field}`)
+        .where(`wiki_${field}.date = :date`, { date: dateId })
+        .getMany();
+      if (stone) {
+        stone.forEach((event) => {
+          data.push([event.year, JSON.parse(event.event)]);
+        });
+
+        return data;
+      }
+      return null;
+    } catch {
+      console.log("데이터 조회 에러");
+    }
+  };
+
   try {
     const year = date.split("-")[0];
     const month = date.split("-")[1];
     const day = date.split("-")[2];
     const weekly = weekCount(Number(year), Number(month), Number(day));
 
-    const dateData = await getRepository(Wiki_date)
-      .createQueryBuilder("wiki_date")
-      .where("wiki_date.date = :date", { date: `${month}-${day}` })
+    const dailyData = await getRepository(Wiki_daily)
+      .createQueryBuilder("wiki_daily")
+      .where("wiki_daily.date = :date", { date: `${month}-${day}` })
       .getMany();
 
-    const issueId = dateData[0]["id"];
-    const birthId = dateData[1]["id"];
-    const deathId = dateData[2]["id"];
-    const musicId = dateData[3]["id"];
-    const movieId = dateData[4]["id"];
+    const weeklyData = await getRepository(Wiki_weekly)
+      .createQueryBuilder("wiki_weekly")
+      .where("wiki_weekly.weekly = :weekly", { weekly: weekly })
+      .getMany();
 
-    const issueData = await getData("issue", issueId, dateData[0]["image"]);
-    const birthData = await getData("birth", birthId, dateData[1]["image"]);
-    const deathData = await getData("death", deathId, dateData[2]["image"]);
-    let musicData = null;
-    let movieData = null;
-    let weatherData = null;
+    const issueId = dailyData[0]["id"];
+    const birthId = dailyData[1]["id"];
+    const deathId = dailyData[2]["id"];
+    const musicId = weeklyData[0]["id"];
+    const movieId = weeklyData[1]["id"];
 
-    const weeklyData = await getRepository(BirthWiki_weekly)
-      .createQueryBuilder("birth_wiki_weekly")
-      .where("birth_wiki_weekly.weekly = :weekly", { weekly: weekly })
-      .getOne();
+    const issueCard = await getDaily("issue", issueId, dailyData[0]["image"]);
+    const birthCard = await getDaily("birth", birthId, dailyData[1]["image"]);
+    const deathCard = await getDaily("death", deathId, dailyData[2]["image"]);
+    const musicCard = await getWeekly("music", musicId, weeklyData[0]["image"]);
+    const movieCard = await getWeekly("movie", movieId, weeklyData[1]["image"]);
+    let weatherCard = null;
 
-    if (weeklyData) {
-      musicData = [
-        dateData[3]["image"],
-        [weeklyData.WS_poster, weeklyData.WS_title, weeklyData.WS_singer],
-        [weeklyData.KS_poster, weeklyData.KS_title, weeklyData.KS_singer],
-      ];
-      movieData = [
-        dateData[4]["image"],
-        [weeklyData.WM_poster, weeklyData.WM_title],
-        [weeklyData.KM_poster, weeklyData.KM_title],
-      ];
-    }
-
-    const dailyData = await getRepository(BirthWiki_daily)
+    const weatherData = await getRepository(Wiki_weather)
       .createQueryBuilder("birth_wiki_daily")
       .where("birth_wiki_daily.date = :date", { date: date })
       .getOne();
 
-    if (dailyData) {
-      weatherData = [dailyData.weather, JSON.parse(dailyData.temperature)];
+    if (weatherData) {
+      weatherCard = [weatherData.weather, JSON.parse(weatherData.temperature)];
     }
 
     res.send({
       data: {
-        issueData,
-        birthData,
-        deathData,
-        musicData,
-        movieData,
-        weatherData,
+        issueCard,
+        birthCard,
+        deathCard,
+        musicCard,
+        movieCard,
+        weatherCard,
       },
     });
   } catch {

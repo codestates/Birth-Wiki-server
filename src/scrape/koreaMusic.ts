@@ -47,7 +47,7 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     }
   };
 
-  const weekly = weekCount(yyyy, mm, dd);
+  const weekly: string = yyyy + weekCount(yyyy, mm, dd);
 
   try {
     const K_music = await axios({
@@ -73,7 +73,7 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
 
     if (!oneCase) {
       oneCase = new BirthWiki_weekly();
-      oneCase.weekly = yyyy + weekly;
+      oneCase.weekly = weekly;
     }
     oneCase.KS_title = title;
     oneCase.KS_singer = singer;

@@ -55,7 +55,7 @@ const weeklyImg = async (): Promise<any> => {
       url: "https://api.unsplash.com/search/photos",
       params: {
         client_id: key,
-        query: "movie",
+        query: "movie night",
         per_page: 30,
         page: i,
       },

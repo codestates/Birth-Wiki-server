@@ -71,7 +71,7 @@ const weeklyImg = async (): Promise<any> => {
       const movie = new Wiki_weekly();
       movie.date = curWeek;
       movie.fieldName = "movie";
-      movie.image = film.data.results[j].urls["regular"];
+      movie.image = album.data.results[j].urls["regular"];
       await movie.save();
 
       const music = new Wiki_weekly();

@@ -14,7 +14,7 @@ const seed = async () => {
     let curMonth = new Date().getMonth() + 1;
     let curDay = new Date().getDate();
     let lastWeek = new Date(curYear, curMonth - 1, curDay - 7).getTime();
-    
+
     const connection1 = await createConnection();
     console.log("connected");
     console.log("start seed image");
@@ -132,4 +132,4 @@ const seed = async () => {
   }
 };
 
-seed();
+//seed();

@@ -61,32 +61,40 @@ export = async (req, res) => {
   };
 
   const getWeekly = async (field: string, dateId: number, img: string) => {
-    let repo;
-    switch (field) {
-      case "movie":
-        repo = Wiki_movie;
-        break;
-      case "music":
-        repo = Wiki_music;
-        break;
-    }
-
-    try {
-      const data: [string, [string, string]?] = [img];
-      const stone: any[] = await getRepository(repo)
-        .createQueryBuilder(`wiki_${field}`)
-        .where(`wiki_${field}.date = :date`, { date: dateId })
-        .getMany();
-      if (stone) {
-        stone.forEach((event) => {
-          data.push([event.year, JSON.parse(event.event)]);
-        });
-
-        return data;
+    if (field === "movie") {
+      try {
+        const data: [string, [string, string]?] = [img];
+        const stone = await getRepository(Wiki_movie)
+          .createQueryBuilder(`wiki_movie`)
+          .where(`wiki_movie.date = :date`, { date: dateId })
+          .getMany();
+        if (stone) {
+          stone.forEach((event) => {
+            data.push([event.title, event.poster]);
+          });
+          return data;
+        }
+        return null;
+      } catch {
+        console.log("영화 데이터 조회 에러");
       }
-      return null;
-    } catch {
-      console.log("데이터 조회 에러");
+    } else {
+      try {
+        const data: [string, [string, string, string]?] = [img];
+        const stone = await getRepository(Wiki_music)
+          .createQueryBuilder(`wiki_music`)
+          .where(`wiki_music.date = :date`, { date: dateId })
+          .getMany();
+        if (stone) {
+          stone.forEach((event) => {
+            data.push([event.title, event.poster, event.singer]);
+          });
+          return data;
+        }
+        return null;
+      } catch {
+        console.log("영화 데이터 조회 에러");
+      }
     }
   };
 
@@ -94,7 +102,8 @@ export = async (req, res) => {
     const year = date.split("-")[0];
     const month = date.split("-")[1];
     const day = date.split("-")[2];
-    const weekly = weekCount(Number(year), Number(month), Number(day));
+    const weekly: string =
+      year + weekCount(Number(year), Number(month), Number(day));
 
     const dailyData = await getRepository(Wiki_daily)
       .createQueryBuilder("wiki_daily")
@@ -103,20 +112,20 @@ export = async (req, res) => {
 
     const weeklyData = await getRepository(Wiki_weekly)
       .createQueryBuilder("wiki_weekly")
-      .where("wiki_weekly.weekly = :weekly", { weekly: weekly })
+      .where("wiki_weekly.date = :date", { date: weekly })
       .getMany();
 
     const issueId = dailyData[0]["id"];
     const birthId = dailyData[1]["id"];
     const deathId = dailyData[2]["id"];
-    const musicId = weeklyData[0]["id"];
-    const movieId = weeklyData[1]["id"];
+    const movieId = weeklyData[0]["id"];
+    const musicId = weeklyData[1]["id"];
 
     const issueCard = await getDaily("issue", issueId, dailyData[0]["image"]);
     const birthCard = await getDaily("birth", birthId, dailyData[1]["image"]);
     const deathCard = await getDaily("death", deathId, dailyData[2]["image"]);
-    const musicCard = await getWeekly("music", musicId, weeklyData[0]["image"]);
-    const movieCard = await getWeekly("movie", movieId, weeklyData[1]["image"]);
+    const movieCard = await getWeekly("movie", movieId, weeklyData[0]["image"]);
+    const musicCard = await getWeekly("music", musicId, weeklyData[1]["image"]);
     let weatherCard = null;
 
     const weatherData = await getRepository(Wiki_weather)

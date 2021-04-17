@@ -61,6 +61,8 @@ export = async (req, res) => {
   };
 
   const getWeekly = async (field: string, dateId: number, img: string) => {
+    if (dateId === null) return null;
+
     if (field === "movie") {
       try {
         const data: [string, [string, string]?] = [img];
@@ -118,14 +120,14 @@ export = async (req, res) => {
     const issueId = dailyData[0]["id"];
     const birthId = dailyData[1]["id"];
     const deathId = dailyData[2]["id"];
-    const movieId = weeklyData[0]["id"];
-    const musicId = weeklyData[1]["id"];
+    const movieId = weeklyData.length === 0 ? null : weeklyData[0]["id"];
+    const musicId = weeklyData.length === 0 ? null : weeklyData[1]["id"];
 
     const issueCard = await getDaily("issue", issueId, dailyData[0]["image"]);
     const birthCard = await getDaily("birth", birthId, dailyData[1]["image"]);
     const deathCard = await getDaily("death", deathId, dailyData[2]["image"]);
-    const movieCard = await getWeekly("movie", movieId, weeklyData[0]["image"]);
-    const musicCard = await getWeekly("music", musicId, weeklyData[1]["image"]);
+    const movieCard = !movieId ? null : await getWeekly("movie", movieId, weeklyData[0]["image"]);
+    const musicCard = !musicId ? null : await getWeekly("music", musicId, weeklyData[1]["image"]);
     let weatherCard = null;
 
     const weatherData = await getRepository(Wiki_weather)

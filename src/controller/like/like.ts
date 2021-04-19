@@ -1,60 +1,84 @@
 import { getRepository } from "typeorm";
-import { Wiki_weather } from "../../entity/Wiki_weather";
+import { Wiki_daily } from "../../entity/Wiki_daily";
 import { Wiki_weekly } from "../../entity/Wiki_weekly";
 import { RecordCard } from "../../entity/RecordCard";
-import { Wiki_birth } from "../../entity/Wiki_birth";
-import { Wiki_daily } from "../../entity/Wiki_daily";
-import { Wiki_death } from "../../entity/Wiki_death";
-import { Wiki_issue } from "../../entity/Wiki_issue";
 import { User } from "../../entity/User";
-import coverImg from "../../scrape/dailyImg";
 
 export = async (req, res) => {
   const { action, nickName, cardId, category, accessToken } = req.body;
 
-  let user = await getRepository(User)
-    .createQueryBuilder("user")
-    .where("user.nickName = :nickName", { nickName })
-    .getOne();
-  let card;
+  try {
+    let user = await getRepository(User)
+      .createQueryBuilder("user")
+      .where("user.nickName = :nickName", { nickName })
+      .leftJoinAndSelect("user.dailys", "wiki_daily")
+      .leftJoinAndSelect("user.weeklys", "wiki_weekly")
+      .leftJoinAndSelect("user.likeRecords", "action_card")
+      .getOne();
 
-  if (action === "like") {
+    let repo;
+    let field;
     switch (category) {
       case "issue" || "birth" || "death":
-        card = await getRepository(Wiki_daily)
-          .createQueryBuilder("wiki_daily")
-          .where("wiki_daily.id = :id", { id: cardId })
-          .getOne();
-        user.dailys = [...user.dailys, card];
-        await user.save();
+        repo = Wiki_daily;
+        field = "wiki_daily";
         break;
 
-      // case "music" || "movie":
-      //   card = await getRepository(Wiki_weekly)
-      //     .createQueryBuilder("wiki_weekly")
-      //     .where("wiki_weekly.id = :id", { id: cardId })
-      //     .getOne();
-      //   user.weeklys = [...user.weeklys, card];
-      //  await user.save();
-      //   break;
-    }
-  } else {
-    switch (category) {
-      case "issue" || "birth" || "death":
-        user.dailys = user.dailys.filter((wiki) => {
-          return wiki.id !== cardId;
-        });
-        await user.save();
+      case "music" || "movie":
+        repo = Wiki_weekly;
+        field = "wiki_weekly";
         break;
 
-      // case "music" || "movie":
-      //   user.weeklys = user.weeklys.filter((wiki) => {
-      //     return wiki.id !== cardId;
-      //   });
-      //   await user.save();
-      //   break;
+      case "record":
+        repo = RecordCard;
+        field = "record_card";
+        break;
     }
+
+    if (action === "like") {
+      let targetCard: any = await getRepository(repo)
+        .createQueryBuilder(`${field}`)
+        .where(`${field}.id = :id`, { id: cardId })
+        .getOne();
+
+      switch (category) {
+        case "issue" || "birth" || "death":
+          user.dailys.push(targetCard);
+          break;
+        case "music" || "movie":
+          user.weeklys.push(targetCard);
+          break;
+        case "record":
+          user.likeRecords.push(targetCard);
+          break;
+      }
+    } else if (action === "cancel") {
+      switch (category) {
+        case "issue" || "birth" || "death":
+          user.dailys = user.dailys.filter((card) => {
+            return card.id !== Number(cardId);
+          });
+
+          break;
+
+        case "music" || "movie":
+          user.weeklys = user.weeklys.filter((card) => {
+            return card.id !== Number(cardId);
+          });
+          break;
+
+        case "record":
+          user.likeRecords = user.likeRecords.filter((card) => {
+            return card.id !== Number(cardId);
+          });
+          break;
+      }
+    }
+    await user.save();
+
+    res.send({ message: `${action} success` });
+  } catch (e) {
+    console.log(e);
+    res.status(400).send({ message: "something wrong" });
   }
-
-  res.send({message: `${action} success`})
 };

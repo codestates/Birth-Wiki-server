@@ -1,16 +1,19 @@
-export interface daily_img {
-  issue: string;
-  birth: string;
-  death: string;
+export interface dailyData {
+  id?: number;
+  date?: string;
+  image?: string;
+  contents?: [string, string[]][];
+}
+export interface weeklyData {
+  id?: number;
+  date?: string;
+  image?: string;
+  korea?: culture;
+  world?: culture;
 }
 
-export interface weekly_img {
-  music: string;
-  movie: string;
-}
-
-export interface wiki {
-  id: number;
-  year: string;
-  event: string;
+export interface culture {
+  title?: string;
+  poster?: string;
+  singer?: string;
 }

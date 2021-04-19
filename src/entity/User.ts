@@ -6,10 +6,14 @@ import {
   ManyToMany,
   JoinTable,
   OneToMany,
+  OneToOne,
+  JoinColumn,
 } from "typeorm";
 import { RecordCard } from "./RecordCard";
+import { Refresh } from "./Refresh";
 import { Wiki_daily } from "./Wiki_daily";
 import { Wiki_weekly } from "./Wiki_weekly";
+
 @Entity()
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
@@ -56,5 +60,23 @@ export class User extends BaseEntity {
       referencedColumnName: "id",
     },
   })
-  weeklys: Wiki_daily[];
+  weeklys: Wiki_weekly[];
+
+  @ManyToMany(() => RecordCard, { cascade: true })
+  @JoinTable({
+    name: "user_like_record",
+    joinColumn: {
+      name: "userId",
+      referencedColumnName: "id",
+    },
+    inverseJoinColumn: {
+      name: "recordId",
+      referencedColumnName: "id",
+    },
+  })
+  likeRecords: RecordCard[];
+
+  @OneToOne(() => Refresh)
+  @JoinColumn()
+  refresh: Refresh;
 }

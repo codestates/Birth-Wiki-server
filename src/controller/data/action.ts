@@ -1,26 +1,26 @@
 import { getRepository } from "typeorm";
-import { Wiki_weather } from "../../entity/Wiki_weather";
-import { Wiki_movie } from "../../entity/Wiki_movie";
-import { RecordCard } from "../../entity/RecordCard";
-import { Wiki_birth } from "../../entity/Wiki_birth";
 import { Wiki_daily } from "../../entity/Wiki_daily";
-import { Wiki_death } from "../../entity/Wiki_death";
+import { Wiki_weekly } from "../../entity/Wiki_weekly";
 import { Wiki_issue } from "../../entity/Wiki_issue";
+import { Wiki_birth } from "../../entity/Wiki_birth";
+import { Wiki_death } from "../../entity/Wiki_death";
 import { Wiki_music } from "../../entity/Wiki_music";
+import { Wiki_movie } from "../../entity/Wiki_movie";
 import { User } from "../../entity/User";
-import coverImg from "../../scrape/dailyImg";
+import { culture, dailyData, weeklyData } from "../../types";
+import { RecordCard } from "../../entity/RecordCard";
 
 export = async (req, res) => {
   const { nickName, accessToken } = req.body;
 
-  const getData = async (likeIdArr, field) => {
+  const dailyData = async (likeIdArr: Wiki_daily[], field: string) => {
     if (likeIdArr.length === 0) {
       return null;
     }
 
     let repo;
-    let card: [string?, string[]?] = [];
-    let cards: [string, [string?, string[]?]?] = [likeIdArr[0]];
+    let card: dailyData = { contents: [] };
+    let cards: dailyData[] = [];
     switch (field) {
       case "issue":
         repo = Wiki_issue;
@@ -31,92 +31,147 @@ export = async (req, res) => {
       case "death":
         repo = Wiki_death;
         break;
-        case "music":
-        repo = Wiki_music;
-        break;
-        case "movie":
-        repo = Wiki_movie;
-        break;
     }
 
     try {
-      for (let i = 1; i < likeIdArr.length; i++) {
+      for (let i = 0; i < likeIdArr.length; i++) {
         const stone: any[] = await getRepository(repo)
           .createQueryBuilder(`wiki_${field}`)
-          .where(`wiki_${field}.date = :date`, { date: likeIdArr[i] })
+          .where(`wiki_${field}.date = :date`, { date: likeIdArr[i].id })
           .getMany();
-        if (stone) {
-          stone.forEach((event) => {
-            card.push([event.year, JSON.parse(event.event)]);
-          });
-          cards.push(card);
-          card = [];
-        }
+
+        let card: dailyData = {
+          id: likeIdArr[i].id,
+          date: likeIdArr[i].date,
+          image: likeIdArr[i].image,
+        };
+        let contents: [string, string[]][] = [];
+        stone.forEach((event) => {
+          contents.push([event.year, JSON.parse(event.event)]);
+        });
+        card.contents = contents;
+        cards.push(card);
       }
+
       return cards;
-    } catch {
-      console.log("데이터 조회 에러");
+    } catch (err) {
+      console.log(`${field} like\n`, err);
     }
   };
 
-  const dailyLikeId = await getRepository(User)
-    .createQueryBuilder("user")
-    .where("user.nickName = :nickName", { nickName })
-    .leftJoinAndSelect("user.dailys", "wiki_daily")
-    .getOne();
+  const weeklyData = async (likeIdArr: Wiki_weekly[], field: string) => {
+    if (likeIdArr.length === 0) {
+      return null;
+    }
 
-  const likeIssue = [];
-  const likeBirth = [];
-  const likeDeath = [];
-  const likeMusic = [];
-  const likeMovie = [];
-
-  dailyLikeId.dailys.forEach((date) => {
-    switch (date.fieldName) {
-      case "issue":
-        likeIssue[0] = date.image;
-        likeIssue.push(date.id);
-        break;
-      case "birth":
-        likeBirth[0] = date.image;
-        likeBirth.push(date.id);
-        break;
-      case "death":
-        likeDeath[0] = date.image;
-        likeDeath.push(date.id);
+    let repo;
+    switch (field) {
+      case "movie":
+        repo = Wiki_movie;
         break;
       case "music":
-        likeMusic[0] = date.image;
-        likeMusic.push(date.id);
-        break;
-      case "movie":
-        likeMovie[0] = date.image;
-        likeMovie.push(date.id);
+        repo = Wiki_music;
         break;
     }
-  });
+    let cards: weeklyData[] = [];
 
-  const issueCards = await getData(likeIssue, "issue");
-  const birthCards = await getData(likeBirth, "birth");
-  const deathCards = await getData(likeDeath, "death");
-  //const musicCards = await getData(likeMusic, "music");
-  //const movieCards = await getData(likeMovie, "movie");
+    try {
+      for (let i = 0; i < likeIdArr.length; i++) {
+        const stone: any[] = await getRepository(repo)
+          .createQueryBuilder(`wiki_${field}`)
+          .where(`wiki_${field}.date = :date`, { date: likeIdArr[i].id })
+          .getMany();
 
-  const recordCards = await getRepository(User)
-    .createQueryBuilder("user")
-    .where("user.nickName = :nickName", { nickName })
-    .leftJoinAndSelect("user.cards", "action_card")
-    .getOne();
+        let card: weeklyData = {
+          id: likeIdArr[i].id,
+          date: likeIdArr[i].date,
+          image: likeIdArr[i].image,
+        };
 
-  //issue birth death 배열 만들기 [img, dateID, dateID, ...]
-  //반복문 - dateID로 해당 카드 정보 가져오기
-  //위키 아이디랑 필드명을 가지고 또 검색??을 해야한다
-  res.send({
-    issueCards,
-    birthCards,
-    deathCards,
-    //musicCards,
-    //movieCards,
-    recordCards: recordCards.cards,
-  });
+        stone.forEach((event) => {
+          let contents: culture = {
+            title: event.title,
+            poster: event.poster,
+          };
+          if (event.singer) {
+            contents["singer"] = event.singer;
+          }
+          card[event.source] = contents;
+        });
+        cards.push(card);
+      }
+
+      return cards;
+    } catch (err) {
+      console.log(`${field} like\n`, err);
+    }
+  };
+
+  try {
+    const userLikeData = await getRepository(User)
+      .createQueryBuilder("user")
+      .where("user.nickName = :nickName", { nickName })
+      .leftJoinAndSelect("user.dailys", "wiki_daily")
+      .leftJoinAndSelect("user.weeklys", "wiki_weekly")
+      .leftJoinAndSelect("user.likeRecords", "action_card")
+      .getOne();
+
+    const userRecordData = await getRepository(User)
+      .createQueryBuilder("user")
+      .where("user.nickName = :nickName", { nickName })
+      .leftJoinAndSelect("user.cards", "action_card")
+      .getOne();
+
+    const birthIds: Wiki_daily[] = [];
+    const issueIds: Wiki_daily[] = [];
+    const deathIds: Wiki_daily[] = [];
+    const musicIds: Wiki_weekly[] = [];
+    const movieIds: Wiki_weekly[] = [];
+
+    userLikeData.dailys.forEach((like) => {
+      switch (like.fieldName) {
+        case "issue":
+          issueIds.push(like);
+          break;
+        case "birth":
+          birthIds.push(like);
+          break;
+        case "death":
+          deathIds.push(like);
+          break;
+      }
+    });
+
+    userLikeData.weeklys.forEach((like) => {
+      switch (like.fieldName) {
+        case "music":
+          musicIds.push(like);
+          break;
+        case "movie":
+          movieIds.push(like);
+          break;
+      }
+    });
+
+    const issueCards = await dailyData(issueIds, "issue");
+    const birthCards = await dailyData(birthIds, "birth");
+    const deathCards = await dailyData(deathIds, "death");
+    const musicCards = await weeklyData(musicIds, "music");
+    const movieCards = await weeklyData(movieIds, "movie");
+    const likeRecordCards = 1;
+    const recordCards =
+      userRecordData.cards.length > 0 ? userRecordData.cards : null;
+
+    res.send({
+      issueCards,
+      birthCards,
+      deathCards,
+      musicCards,
+      movieCards,
+      recordCards,
+    });
+  } catch (err) {
+    console.log("action data\n", err);
+    res.status(400).send({ message: "something wrong" });
+  }
 };

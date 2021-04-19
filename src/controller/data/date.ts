@@ -1,13 +1,13 @@
-import { createQueryBuilder, getRepository } from "typeorm";
+import { getRepository } from "typeorm";
 import { Wiki_weather } from "../../entity/Wiki_weather";
 import { Wiki_weekly } from "../../entity/Wiki_weekly";
-import { RecordCard } from "../../entity/RecordCard";
 import { Wiki_birth } from "../../entity/Wiki_birth";
 import { Wiki_daily } from "../../entity/Wiki_daily";
 import { Wiki_death } from "../../entity/Wiki_death";
 import { Wiki_issue } from "../../entity/Wiki_issue";
 import { Wiki_movie } from "../../entity/Wiki_movie";
 import { Wiki_music } from "../../entity/Wiki_music";
+import { culture, dailyData, weeklyData } from "../../types";
 
 export = async (req, res) => {
   const { date, nickName, accessToken } = req.body;
@@ -27,7 +27,7 @@ export = async (req, res) => {
     return week < 10 ? "0" + week : week;
   };
 
-  const getDaily = async (field: string, dateId: number, img: string) => {
+  const getDaily = async (field: string, dateData: Wiki_daily) => {
     let repo;
     switch (field) {
       case "issue":
@@ -42,61 +42,69 @@ export = async (req, res) => {
     }
 
     try {
-      const data: [string, [string, string]?] = [img];
       const stone: any[] = await getRepository(repo)
         .createQueryBuilder(`wiki_${field}`)
-        .where(`wiki_${field}.date = :date`, { date: dateId })
+        .where(`wiki_${field}.date = :date`, { date: dateData.id })
         .getMany();
-      if (stone) {
-        stone.forEach((event) => {
-          data.push([event.year, JSON.parse(event.event)]);
-        });
 
-        return data;
-      }
-      return null;
-    } catch {
-      console.log("데이터 조회 에러");
+      let card: dailyData = {
+        id: dateData.id,
+        date: dateData.date,
+        image: dateData.image,
+      };
+      let contents: [string, string[]][] = [];
+      stone.forEach((event) => {
+        contents.push([event.year, JSON.parse(event.event)]);
+      });
+      card.contents = contents;
+
+      return card;
+    } catch (err) {
+      console.log(`${field} date\n`, err);
     }
   };
 
-  const getWeekly = async (field: string, dateId: number, img: string) => {
-    if (dateId === null) return null;
+  const getWeekly = async (field: string, dateData: Wiki_weekly) => {
+    let repo;
+    switch (field) {
+      case "movie":
+        repo = Wiki_movie;
+        break;
+      case "music":
+        repo = Wiki_music;
+        break;
+    }
 
-    if (field === "movie") {
-      try {
-        const data: [string, [string, string]?] = [img];
-        const stone = await getRepository(Wiki_movie)
-          .createQueryBuilder(`wiki_movie`)
-          .where(`wiki_movie.date = :date`, { date: dateId })
-          .getMany();
-        if (stone) {
-          stone.forEach((event) => {
-            data.push([event.title, event.poster]);
-          });
-          return data;
-        }
-        return null;
-      } catch {
-        console.log("영화 데이터 조회 에러");
+    try {
+      const stone: any[] = await getRepository(repo)
+        .createQueryBuilder(`wiki_${field}`)
+        .where(`wiki_${field}.date = :date`, { date: dateData.id })
+        .getMany();
+
+      if (stone.length > 0) {
+        let card: weeklyData = {
+          id: dateData.id,
+          date: dateData.date,
+          image: dateData.image,
+        };
+
+        stone.forEach((event) => {
+          let contents: culture = {
+            title: event.title,
+            poster: event.poster,
+          };
+          if (field === "music") {
+            contents.singer = event.singer;
+          }
+          card[event.source] = contents;
+        });
+
+        return card;
       }
-    } else {
-      try {
-        const data: [string, [string, string, string]?] = [img];
-        const stone = await getRepository(Wiki_music)
-          .createQueryBuilder(`wiki_music`)
-          .where(`wiki_music.date = :date`, { date: dateId })
-          .getMany();
-        if (stone) {
-          stone.forEach((event) => {
-            data.push([event.title, event.poster, event.singer]);
-          });
-          return data;
-        }
-        return null;
-      } catch {
-        console.log("영화 데이터 조회 에러");
-      }
+
+      return null;
+    } catch (err) {
+      console.log(`${field} date\n`, err);
     }
   };
 
@@ -117,17 +125,17 @@ export = async (req, res) => {
       .where("wiki_weekly.date = :date", { date: weekly })
       .getMany();
 
-    const issueId = dailyData[0]["id"];
-    const birthId = dailyData[1]["id"];
-    const deathId = dailyData[2]["id"];
-    const movieId = weeklyData.length === 0 ? null : weeklyData[0]["id"];
-    const musicId = weeklyData.length === 0 ? null : weeklyData[1]["id"];
+    const issueData = dailyData[0];
+    const birthData = dailyData[1];
+    const deathData = dailyData[2];
+    const movieId = weeklyData[0];
+    const musicId = weeklyData[1];
 
-    const issueCard = await getDaily("issue", issueId, dailyData[0]["image"]);
-    const birthCard = await getDaily("birth", birthId, dailyData[1]["image"]);
-    const deathCard = await getDaily("death", deathId, dailyData[2]["image"]);
-    const movieCard = !movieId ? null : await getWeekly("movie", movieId, weeklyData[0]["image"]);
-    const musicCard = !musicId ? null : await getWeekly("music", musicId, weeklyData[1]["image"]);
+    const issueCard = await getDaily("issue", issueData);
+    const birthCard = await getDaily("birth", birthData);
+    const deathCard = await getDaily("death", deathData);
+    const movieCard = movieId ? await getWeekly("movie", movieId) : null;
+    const musicCard = musicId ? await getWeekly("music", musicId) : null;
     let weatherCard = null;
 
     const weatherData = await getRepository(Wiki_weather)
@@ -136,7 +144,11 @@ export = async (req, res) => {
       .getOne();
 
     if (weatherData) {
-      weatherCard = [weatherData.weather, JSON.parse(weatherData.temperature)];
+      weatherCard = {
+        id: weatherData.id,
+        weather: weatherData.weather,
+        temperature: JSON.parse(weatherData.temperature),
+      };
     }
 
     res.send({
@@ -149,7 +161,8 @@ export = async (req, res) => {
         weatherCard,
       },
     });
-  } catch {
+  } catch (err) {
+    console.log(err);
     res.status(400).send({ message: "something wrong" });
   }
 };

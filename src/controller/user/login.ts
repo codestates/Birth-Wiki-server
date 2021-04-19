@@ -68,7 +68,7 @@ export = async (req, res) => {
           client_secret: process.env.G_CLIENTSR,
           code: AuthorizationCode,
           grant_type: "authorization_code",
-          redirect_uri: "http://localhost:3000",
+          redirect_uri: process.env.REDIRECT_URI,
         },
       });
 
@@ -85,25 +85,43 @@ export = async (req, res) => {
         .where("user.userEmail = :userEmail", {
           userEmail: profile.data.email,
         })
+        .leftJoinAndSelect("user.refresh", "refresh")
         .getOne();
 
+      let hashRT;
       if (!existUser) {
-        const user = new User();
+        let user = new User();
         user.userEmail = profile.data.email;
+        user.nickName = profile.data.name;
+        user.profileImage = profile.data.picture;
         await user.save();
+
+        let refresh = new Refresh();
+        refresh.user = user;
+        refresh.token = refresh_token;
+        await refresh.save();
+
+        hashRT = crypto
+          .createHmac("sha256", process.env.SHA_RT)
+          .update(String(refresh.id))
+          .digest("hex");
+
+        refresh.hashRT = hashRT;
+        await refresh.save();
+
+        user.refresh = refresh;
+        await user.save();
+      } else {
+        hashRT = existUser.refresh.hashRT;
+        if (refresh_token) {
+          let refresh = await getRepository(Refresh)
+            .createQueryBuilder("refresh")
+            .where("refresh.hashRT = :hashRT", { hashRT })
+            .getOne();
+          refresh.token = refresh_token;
+          await refresh.save();
+        }
       }
-
-      const refresh = new Refresh();
-      refresh.token = refresh_token;
-      await refresh.save();
-
-      const hashRT = crypto
-        .createHmac("sha256", process.env.SHA_RT)
-        .update(String(refresh.id))
-        .digest("hex");
-
-      refresh.hashRT = hashRT;
-      await refresh.save();
 
       res
         .cookie("refreshToken", hashRT, {
@@ -114,7 +132,11 @@ export = async (req, res) => {
           secure: true,
         })
         .send({
-          data: { userEmail: profile.data.email, accessToken: access_token },
+          data: {
+            nickName: profile.data.name,
+            profileImage: profile.data.picture,
+            accessToken: access_token,
+          },
         });
     }
 
@@ -129,7 +151,7 @@ export = async (req, res) => {
           client_secret: process.env.K_CLIENTSR,
           code: AuthorizationCode,
           grant_type: "authorization_code",
-          redirect_uri: "http://localhost:3000",
+          redirect_uri: process.env.REDIRECT_URI,
         },
       });
 
@@ -194,7 +216,7 @@ export = async (req, res) => {
           client_secret: process.env.N_CLIENTSR,
           code: AuthorizationCode,
           grant_type: "authorization_code",
-          redirect_uri: "http://localhost:3000",
+          redirect_uri: process.env.REDIRECT_URI,
         },
       });
 

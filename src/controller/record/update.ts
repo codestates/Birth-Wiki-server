@@ -1,8 +1,18 @@
 import { getRepository } from "typeorm";
 import { RecordCard } from "../../entity/RecordCard";
+import verification from "../../func/verification";
 
 export = async (req, res) => {
-  const { nickName, cardId, privacy, contents, accessToken } = req.body;
+  const { source, cardId, privacy, contents, accessToken } = req.body;
+  const refreshToken = req.cookies.refreshToken;
+
+  let verify = await verification(source, accessToken, refreshToken);
+
+  if (verify.action === "error") {
+    res.status(403).send({ message: "unavailable token" });
+    return;
+  }
+
   try {
     const oneCase = await getRepository(RecordCard)
       .createQueryBuilder("record_card")
@@ -16,7 +26,16 @@ export = async (req, res) => {
     }
     await oneCase.save();
 
-    res.send({ message: "update record" });
+    if (verify.action === "change") {
+      res.send({
+        data: { accessToken: verify.accessToken },
+        message: "update record",
+      });
+    } else {
+      res.send({
+        message: "update record",
+      });
+    }
   } catch (err) {
     console.log(err);
     res.status(400).send({ message: "something wrong" });

@@ -3,9 +3,18 @@ import { Wiki_daily } from "../../entity/Wiki_daily";
 import { Wiki_weekly } from "../../entity/Wiki_weekly";
 import { RecordCard } from "../../entity/RecordCard";
 import { User } from "../../entity/User";
+import verification from "../../func/verification";
 
 export = async (req, res) => {
-  const { action, nickName, cardId, category, accessToken } = req.body;
+  const { source, action, nickName, cardId, category, accessToken } = req.body;
+  const refreshToken = req.cookies.refreshToken;
+
+  let verify = await verification(source, accessToken, refreshToken);
+
+  if (verify.action === "error") {
+    res.status(403).send({ message: "unavailable token" });
+    return;
+  }
 
   try {
     let user = await getRepository(User)
@@ -76,9 +85,18 @@ export = async (req, res) => {
     }
     await user.save();
 
-    res.send({ message: `${action} success` });
-  } catch (e) {
-    console.log(e);
+    if (verify.action === "change") {
+      res.send({
+        data: { accessToken: verify.accessToken },
+        message: `${action} success`,
+      });
+    } else {
+      res.send({
+        message: `${action} success`,
+      });
+    }
+  } catch (err) {
+    console.log("create like\n", err);
     res.status(400).send({ message: "something wrong" });
   }
 };

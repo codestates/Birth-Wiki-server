@@ -4,13 +4,6 @@ import("dotenv/config");
 
 export = async (req, res) => {
   try {
-    await getConnection()
-      .createQueryBuilder()
-      .delete()
-      .from(Refresh)
-      .where("hashRT = :hashRT", { hashRT: req.cookies.refreshToken })
-      .execute();
-
     res
       .clearCookie("refreshToken", {
         domain: "localhost",

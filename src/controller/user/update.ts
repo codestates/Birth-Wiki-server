@@ -1,10 +1,19 @@
 import { User } from "../../entity/User";
 import { getRepository } from "typeorm";
 import crypto from "crypto";
+import verification from "../../func/verification";
 import("dotenv/config");
 
 export = async (req, res) => {
-  const { userEmail, nickName, password } = req.body;
+  const { source, accessToken, nickName, password } = req.body;
+  const refreshToken = req.cookies.refreshToken;
+
+  let verify = await verification(source, accessToken, refreshToken);
+
+  if (verify.action === "error") {
+    res.status(403).send({ message: "unavailable token" });
+    return;
+  }
 
   const hashPW = password
     ? crypto
@@ -16,7 +25,7 @@ export = async (req, res) => {
   try {
     const user = await getRepository(User)
       .createQueryBuilder("user")
-      .where("user.userEmail = :userEmail", { userEmail })
+      .where("user.nickName = :nickName", { nickName })
       .getOne();
 
     user.nickName = nickName || user.nickName;
@@ -26,7 +35,16 @@ export = async (req, res) => {
     }
     await user.save();
 
-    res.send({ message: "update userInfo" });
+    if (verify.action === "change") {
+      res.send({
+        data: { accessToken: verify.accessToken },
+        message: "update userInfo",
+      });
+    } else {
+      res.send({
+        message: "update userInfo",
+      });
+    }
   } catch {
     res.status(400).send({ message: "something wrong" });
   }

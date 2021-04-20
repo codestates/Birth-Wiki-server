@@ -6,9 +6,17 @@ import { Wiki_weekly } from "../entity/Wiki_weekly";
 import("dotenv/config");
 
 const KMovie = async (yyyy: number, mm: number, dd: number): Promise<any> => {
-  const weekCount = (yyyy, mm, dd) => {
+  let curYear;
+
+  const weekCount = (yyyy: number, mm: number, dd: number): string => {
     let today = new Date(yyyy, mm - 1, dd);
-    let countDay = new Date(yyyy, 0, 1);
+    let defaultDay = new Date(1958, 7, 4);
+    while (today > defaultDay) {
+      defaultDay.setDate(defaultDay.getDate() + 7);
+    }
+    today.setDate(defaultDay.getDate() - 7);
+    curYear = today.getFullYear();
+    let countDay = new Date(curYear, 0, 1);
     let week = 1;
     while (today > countDay) {
       countDay.setDate(countDay.getDate() + 1);
@@ -80,10 +88,13 @@ const KMovie = async (yyyy: number, mm: number, dd: number): Promise<any> => {
             }
           });
 
+        if (posterURL.length === 26) {
+          return null;
+        }
         return posterURL;
       }
-    } catch (e) {
-      console.log("포스터 에러", e);
+    } catch (err) {
+      console.log("K_movie poster\n", err);
     }
   };
 
@@ -101,7 +112,7 @@ const KMovie = async (yyyy: number, mm: number, dd: number): Promise<any> => {
       },
     });
 
-    let weekly: string = yyyy + weekCount(yyyy, mm, dd);
+    let weekly: string = curYear + weekCount(yyyy, mm, dd);
     let title = K_movie.data.boxOfficeResult.weeklyBoxOfficeList[0].movieNm;
     let existPoster = await getRepository(Wiki_movie)
       .createQueryBuilder("wiki_movie")

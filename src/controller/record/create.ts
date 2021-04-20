@@ -1,14 +1,19 @@
 import { getRepository } from "typeorm";
 import { RecordCard } from "../../entity/RecordCard";
 import { User } from "../../entity/User";
+import verification from "../../func/verification";
 
 export = async (req, res) => {
-  const { nickName, date, privacy, contents, accessToken } = req.body;
-  if (!accessToken) {
-    res.send({ message: "토큰없쪙" });
+  const { source, nickName, date, privacy, contents, accessToken } = req.body;
+  const refreshToken = req.cookies.refreshToken;
+
+  let verify = await verification(source, accessToken, refreshToken);
+
+  if (verify.action === "error") {
+    res.status(403).send({ message: "unavailable token" });
     return;
   }
-  
+
   try {
     const user = await getRepository(User)
       .createQueryBuilder("user")
@@ -25,7 +30,16 @@ export = async (req, res) => {
     }
     await oneCase.save();
 
-    res.send({ message: "create record" });
+    if (verify.action === "change") {
+      res.send({
+        data: { accessToken: verify.accessToken },
+        message: "create record",
+      });
+    } else {
+      res.send({
+        message: `create record`,
+      });
+    }
   } catch (err) {
     console.log(err);
     res.status(400).send({ message: "something wrong" });

@@ -1,13 +1,20 @@
-import jwt from "jsonwebtoken";
+import axios from "axios";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { getRepository } from "typeorm";
 import { User } from "../../entity/User";
 import { Refresh } from "../../entity/Refresh";
-import axios from "axios";
+import getLikeCard from "../../func/getLikeCard";
 import("dotenv/config");
 
 export = async (req, res) => {
   const { AuthorizationCode, source, userEmail, password } = req.body;
+
+  let nickName;
+  let profileImage;
+  let accessToken;
+  let hashRT;
+
   try {
     if (source === "home") {
       const hashPW = crypto
@@ -19,41 +26,36 @@ export = async (req, res) => {
         .createQueryBuilder("user")
         .where("user.userEmail = :userEmail", { userEmail })
         .andWhere("user.password = :password", { password: hashPW })
+        .leftJoinAndSelect("user.refresh", "refresh")
         .getOne();
 
       if (!user) {
         res.status(401).send({ message: "unregistered user" });
+        return;
       } else {
         delete user.password;
-        let accessToken = jwt.sign({ ...user }, process.env.SHA_AT, {
+        accessToken = jwt.sign({ ...user }, process.env.SHA_AT, {
           expiresIn: 3600,
         });
+        nickName = user.nickName;
 
-        let refreshToken = jwt.sign({ id: user.id }, process.env.SHA_RT, {
-          expiresIn: 50400,
-        });
+        if (user.refresh) {
+          hashRT = user.refresh.hashRT;
+        } else {
+          let refreshToken = jwt.sign({ id: user.id }, process.env.SHA_RT);
 
-        const refresh = new Refresh();
-        refresh.token = refreshToken;
-        await refresh.save();
+          const refresh = new Refresh();
+          refresh.token = refreshToken;
+          await refresh.save();
 
-        const hashRT = crypto
-          .createHmac("sha256", process.env.SHA_RT)
-          .update(String(refresh.id))
-          .digest("hex");
+          hashRT = crypto
+            .createHmac("sha256", process.env.SHA_RT)
+            .update(String(refresh.id))
+            .digest("hex");
 
-        refresh.hashRT = hashRT;
-        await refresh.save();
-
-        res
-          .cookie("refreshToken", hashRT, {
-            domain: "localhost",
-            path: "/",
-            sameSite: "none",
-            httpOnly: true,
-            secure: true,
-          })
-          .send({ data: { ...user, accessToken: accessToken } });
+          refresh.hashRT = hashRT;
+          await refresh.save();
+        }
       }
     }
 
@@ -88,12 +90,15 @@ export = async (req, res) => {
         .leftJoinAndSelect("user.refresh", "refresh")
         .getOne();
 
-      let hashRT;
+      accessToken = access_token;
       if (!existUser) {
+        nickName = profile.data.name;
+        profileImage = profile.data.picture;
+
         let user = new User();
         user.userEmail = profile.data.email;
-        user.nickName = profile.data.name;
-        user.profileImage = profile.data.picture;
+        user.nickName = nickName;
+        user.profileImage = profileImage;
         await user.save();
 
         let refresh = new Refresh();
@@ -112,6 +117,8 @@ export = async (req, res) => {
         user.refresh = refresh;
         await user.save();
       } else {
+        nickName = existUser.nickName;
+        profileImage = existUser.profileImage;
         hashRT = existUser.refresh.hashRT;
         if (refresh_token) {
           let refresh = await getRepository(Refresh)
@@ -122,22 +129,6 @@ export = async (req, res) => {
           await refresh.save();
         }
       }
-
-      res
-        .cookie("refreshToken", hashRT, {
-          domain: "localhost",
-          path: "/",
-          sameSite: "none",
-          httpOnly: true,
-          secure: true,
-        })
-        .send({
-          data: {
-            nickName: profile.data.name,
-            profileImage: profile.data.picture,
-            accessToken: access_token,
-          },
-        });
     }
 
     if (source === "kakao") {
@@ -168,41 +159,50 @@ export = async (req, res) => {
         .where("user.userEmail = :userEmail", {
           userEmail: String(profile.data.id),
         })
+        .leftJoinAndSelect("user.refresh", "refresh")
         .getOne();
 
+      accessToken = access_token;
       if (!existUser) {
+        nickName = profile.data.kakao_account.profile.nickname;
+        profileImage = profile.data.kakao_account.profile.profile_image_url;
+
         const user = new User();
         user.userEmail = String(profile.data.id);
-        if (profile.data.kakao_account.profile.profile_image_url) {
-          user.profileImage =
-            profile.data.kakao_account.profile.profile_image_url;
-        }
+        user.nickName = nickName;
+        user.profileImage = profileImage;
+
         await user.save();
+
+        const refresh = new Refresh();
+        refresh.token = refresh_token;
+        refresh.user = user;
+        await refresh.save();
+
+        hashRT = crypto
+          .createHmac("sha256", process.env.SHA_RT)
+          .update(String(refresh.id))
+          .digest("hex");
+
+        refresh.hashRT = hashRT;
+        await refresh.save();
+
+        user.refresh = refresh;
+        await user.save();
+      } else {
+        nickName = existUser.nickName;
+        profileImage = existUser.profileImage;
+        hashRT = existUser.refresh.hashRT;
+
+        if (refresh_token) {
+          const refresh = await getRepository(Refresh)
+            .createQueryBuilder("refresh")
+            .where("refresh.hashRT = :hashRT", { hashRT })
+            .getOne();
+          refresh.token = refresh_token;
+          await refresh.save();
+        }
       }
-
-      const refresh = new Refresh();
-      refresh.token = refresh_token;
-      await refresh.save();
-
-      const hashRT = crypto
-        .createHmac("sha256", process.env.SHA_RT)
-        .update(String(refresh.id))
-        .digest("hex");
-
-      refresh.hashRT = hashRT;
-      await refresh.save();
-
-      res
-        .cookie("refreshToken", hashRT, {
-          domain: "localhost",
-          path: "/",
-          sameSite: "none",
-          httpOnly: true,
-          secure: true,
-        })
-        .send({
-          data: { userEmail: profile.data.id, accessToken: access_token },
-        });
     }
 
     if (source === "naver") {
@@ -232,44 +232,71 @@ export = async (req, res) => {
         .where("user.userEmail = :userEmail", {
           userEmail: String(profile.data.response.email),
         })
+        .leftJoinAndSelect("user.refresh", "refresh")
         .getOne();
 
+      accessToken = access_token;
       if (!existUser) {
+        nickName = profile.data.response.nickname;
+        profileImage = profile.data.response.profile_image;
+
         const user = new User();
         user.userEmail = profile.data.response.email;
-        user.nickName = profile.data.response.nickname;
-        user.profileImage = profile.data.response.profile_image;
+        user.nickName = nickName;
+        user.profileImage = profileImage;
         await user.save();
+
+        const refresh = new Refresh();
+        refresh.token = refresh_token;
+        await refresh.save();
+
+        hashRT = crypto
+          .createHmac("sha256", process.env.SHA_RT)
+          .update(String(refresh.id))
+          .digest("hex");
+
+        refresh.hashRT = hashRT;
+        await refresh.save();
+
+        user.refresh = refresh;
+        await user.save();
+      } else {
+        hashRT = existUser.refresh.hashRT;
+        nickName = existUser.nickName;
+        profileImage = existUser.profileImage;
+
+        if (refresh_token) {
+          const refresh = await getRepository(Refresh)
+            .createQueryBuilder("refresh")
+            .where("refresh.hashRT = :hashRT", { hashRT })
+            .getOne();
+          refresh.token = refresh_token;
+          await refresh.save();
+        }
       }
-
-      const refresh = new Refresh();
-      refresh.token = refresh_token;
-      await refresh.save();
-
-      const hashRT = crypto
-        .createHmac("sha256", process.env.SHA_RT)
-        .update(String(refresh.id))
-        .digest("hex");
-
-      refresh.hashRT = hashRT;
-      await refresh.save();
-
-      res
-        .cookie("refreshToken", hashRT, {
-          domain: "localhost",
-          path: "/",
-          sameSite: "none",
-          httpOnly: true,
-          secure: true,
-        })
-        .send({
-          data: {
-            userEmail: profile.data.response.email,
-            accessToken: access_token,
-          },
-        });
     }
-  } catch {
+
+    let userCard = await getLikeCard(nickName);
+
+    res
+      .cookie("refreshToken", hashRT, {
+        domain: "localhost",
+        path: "/",
+        sameSite: "none",
+        httpOnly: true,
+        secure: true,
+      })
+      .send({
+        data: {
+          nickName,
+          profileImage,
+          accessToken,
+          likeCards: userCard.likeCards,
+          recordCards: userCard.recordCards,
+        },
+      });
+  } catch (err) {
+    console.log("login\n", err);
     res.status(400).send({ message: "something wrong" });
   }
 };

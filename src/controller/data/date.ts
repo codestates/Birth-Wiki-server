@@ -10,11 +10,17 @@ import { Wiki_music } from "../../entity/Wiki_music";
 import { culture, dailyData, weeklyData } from "../../types";
 
 export = async (req, res) => {
-  const { date, nickName, accessToken } = req.body;
+  const { date } = req.body;
 
-  const weekCount = (yyyy: number, mm: number, dd: number) => {
+  const weekCount = (yyyy: number, mm: number, dd: number): string => {
     let today = new Date(yyyy, mm - 1, dd);
-    let countDay = new Date(yyyy, 0, 1);
+    let defaultDay = new Date(1958, 7, 4);
+    while (today > defaultDay) {
+      defaultDay.setDate(defaultDay.getDate() + 7);
+    }
+    today.setDate(defaultDay.getDate() - 7);
+    let curYear = today.getFullYear();
+    let countDay = new Date(curYear, 0, 1);
     let week = 1;
     while (today > countDay) {
       countDay.setDate(countDay.getDate() + 1);
@@ -24,8 +30,13 @@ export = async (req, res) => {
       }
     }
 
-    return week < 10 ? "0" + week : week;
+    return week < 10 ? curYear + "0" + week : curYear + "" + week;
   };
+
+  const year = date.split("-")[0];
+  const month = date.split("-")[1];
+  const day = date.split("-")[2];
+  const weekly: string = weekCount(Number(year), Number(month), Number(day));
 
   const getDaily = async (field: string, dateData: Wiki_daily) => {
     let repo;
@@ -51,6 +62,7 @@ export = async (req, res) => {
         id: dateData.id,
         date: dateData.date,
         image: dateData.image,
+        category: field,
       };
       let contents: [string, string[]][] = [];
       stone.forEach((event) => {
@@ -84,8 +96,9 @@ export = async (req, res) => {
       if (stone.length > 0) {
         let card: weeklyData = {
           id: dateData.id,
-          date: dateData.date,
+          date: `${weekly.slice(0, -2)}-${weekly.slice(-2)}`,
           image: dateData.image,
+          category: field,
         };
 
         stone.forEach((event) => {
@@ -109,12 +122,6 @@ export = async (req, res) => {
   };
 
   try {
-    const year = date.split("-")[0];
-    const month = date.split("-")[1];
-    const day = date.split("-")[2];
-    const weekly: string =
-      year + weekCount(Number(year), Number(month), Number(day));
-
     const dailyData = await getRepository(Wiki_daily)
       .createQueryBuilder("wiki_daily")
       .where("wiki_daily.date = :date", { date: `${month}-${day}` })
@@ -140,7 +147,7 @@ export = async (req, res) => {
 
     const weatherData = await getRepository(Wiki_weather)
       .createQueryBuilder("birth_wiki_daily")
-      .where("birth_wiki_daily.date = :date", { date: date })
+      .where("birth_wiki_daily.date = :date", { date })
       .getOne();
 
     if (weatherData) {
@@ -162,7 +169,7 @@ export = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log(err);
+    console.log('date data\n', err);
     res.status(400).send({ message: "something wrong" });
   }
 };

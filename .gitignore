@@ -6,3 +6,4 @@ tmp/
 temp/
 .env
 config.ts/
+image/

@@ -5,5 +5,5 @@ build/
 tmp/
 temp/
 .env
-config.ts/
+src/config.ts/
 image/

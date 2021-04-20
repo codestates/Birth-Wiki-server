@@ -14,6 +14,7 @@ export = async (req, res) => {
   let profileImage;
   let accessToken;
   let hashRT;
+  let email = userEmail;
 
   try {
     if (source === "home") {
@@ -38,6 +39,9 @@ export = async (req, res) => {
           expiresIn: 3600,
         });
         nickName = user.nickName;
+        profileImage = user.profileImage
+          ? `https://server.birthwiki.space/${user.profileImage}`
+          : null;
 
         if (user.refresh) {
           hashRT = user.refresh.hashRT;
@@ -90,6 +94,7 @@ export = async (req, res) => {
         .leftJoinAndSelect("user.refresh", "refresh")
         .getOne();
 
+      email = profile.data.email;
       accessToken = access_token;
       if (!existUser) {
         nickName = profile.data.name;
@@ -162,6 +167,7 @@ export = async (req, res) => {
         .leftJoinAndSelect("user.refresh", "refresh")
         .getOne();
 
+      email = profile.data.id;
       accessToken = access_token;
       if (!existUser) {
         nickName = profile.data.kakao_account.profile.nickname;
@@ -235,6 +241,7 @@ export = async (req, res) => {
         .leftJoinAndSelect("user.refresh", "refresh")
         .getOne();
 
+      email = profile.data.response.email;
       accessToken = access_token;
       if (!existUser) {
         nickName = profile.data.response.nickname;
@@ -288,6 +295,7 @@ export = async (req, res) => {
       })
       .send({
         data: {
+          userEmail: email,
           nickName,
           profileImage,
           accessToken,

@@ -5,7 +5,7 @@ import verification from "../../func/verification";
 import("dotenv/config");
 
 export = async (req, res) => {
-  const { source, accessToken, nickName, password } = req.body;
+  const { source, userEmail, accessToken, nickName, password } = req.body;
   const refreshToken = req.cookies.refreshToken;
 
   let verify = await verification(source, accessToken, refreshToken);
@@ -25,7 +25,7 @@ export = async (req, res) => {
   try {
     const user = await getRepository(User)
       .createQueryBuilder("user")
-      .where("user.nickName = :nickName", { nickName })
+      .where("user.userEmail = :userEmail", { userEmail })
       .getOne();
 
     user.nickName = nickName || user.nickName;

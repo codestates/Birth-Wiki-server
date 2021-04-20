@@ -49,8 +49,12 @@ export = async (req, res) => {
           let refreshToken = jwt.sign({ id: user.id }, process.env.SHA_RT);
 
           const refresh = new Refresh();
+          refresh.user = user;
           refresh.token = refreshToken;
           await refresh.save();
+
+          user.refresh = refresh;
+          await user.save();
 
           hashRT = crypto
             .createHmac("sha256", process.env.SHA_RT)
@@ -254,6 +258,7 @@ export = async (req, res) => {
         await user.save();
 
         const refresh = new Refresh();
+        refresh.user = user;
         refresh.token = refresh_token;
         await refresh.save();
 

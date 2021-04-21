@@ -19,5 +19,6 @@ router.post("/login", userController.login);
 router.post("/logout", userController.logout);
 router.get("/exist", userController.exist);
 router.post("/update", upload.single("profileImage"), userController.update);
+router.post("/info", userController.info);
 
 export = router;

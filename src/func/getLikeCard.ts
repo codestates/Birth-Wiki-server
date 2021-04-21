@@ -80,7 +80,9 @@ export = async (nickName: string) => {
 
         let card: weeklyData = {
           id: likeIdArr[i].id,
-          date: `${likeIdArr[i].date.slice(0, -2)}-${likeIdArr[i].date.slice(-2)}`,
+          date: `${likeIdArr[i].date.slice(0, -2)}-${likeIdArr[i].date.slice(
+            -2
+          )}`,
           image: likeIdArr[i].image,
           category: field,
         };
@@ -154,7 +156,7 @@ export = async (nickName: string) => {
     await weeklyData(musicIds, "music");
     await weeklyData(movieIds, "movie");
     const likeRecordCards = 1;
-    const recordCards = 
+    const recordCards =
       userRecordData.cards.length > 0 ? userRecordData.cards : null;
 
     if (likeCards.length === 0) {
@@ -166,7 +168,7 @@ export = async (nickName: string) => {
       recordCards,
     };
   } catch (err) {
-    console.log("action data\n", err);
+    console.log("getLikeCard\n", err);
     return { likeCards: null, recordCards: null };
   }
 };

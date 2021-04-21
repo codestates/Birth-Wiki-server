@@ -1,7 +1,3 @@
-import { getConnection } from "typeorm";
-import { Refresh } from "../../entity/Refresh";
-import("dotenv/config");
-
 export = async (req, res) => {
   try {
     res

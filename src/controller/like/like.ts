@@ -28,12 +28,15 @@ export = async (req, res) => {
     let repo;
     let field;
     switch (category) {
-      case "issue" || "birth" || "death":
+      case "issue":
+      case "birth":
+      case "death":
         repo = Wiki_daily;
         field = "wiki_daily";
         break;
 
-      case "music" || "movie":
+      case "music":
+      case "movie":
         repo = Wiki_weekly;
         field = "wiki_weekly";
         break;
@@ -51,10 +54,13 @@ export = async (req, res) => {
         .getOne();
 
       switch (category) {
-        case "issue" || "birth" || "death":
+        case "issue":
+        case "birth":
+        case "death":
           user.dailys.push(targetCard);
           break;
-        case "music" || "movie":
+        case "music":
+        case "movie":
           user.weeklys.push(targetCard);
           break;
         case "record":
@@ -63,14 +69,17 @@ export = async (req, res) => {
       }
     } else if (action === "cancel") {
       switch (category) {
-        case "issue" || "birth" || "death":
+        case "issue":
+        case "birth":
+        case "death":
           user.dailys = user.dailys.filter((card) => {
             return card.id !== Number(cardId);
           });
 
           break;
 
-        case "music" || "movie":
+        case "music":
+        case "movie":
           user.weeklys = user.weeklys.filter((card) => {
             return card.id !== Number(cardId);
           });

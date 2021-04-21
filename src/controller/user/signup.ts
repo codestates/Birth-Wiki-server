@@ -16,7 +16,7 @@ export = async (req, res) => {
     user.nickName = nickName;
     user.password = hashPW;
     if (req.file) {
-      user.profileImage = req.file.path;
+      user.profileImage = `https://server.birthwiki.space/${req.file.path}`;
     }
     await user.save();
 

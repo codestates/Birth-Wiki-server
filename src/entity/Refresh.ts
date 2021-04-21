@@ -11,8 +11,4 @@ export class Refresh extends BaseEntity {
 
   @Column({ nullable: true })
   hashRT: string;
-
-  @OneToOne(() => User, { cascade: true })
-  @JoinColumn()
-  user: User;
 }

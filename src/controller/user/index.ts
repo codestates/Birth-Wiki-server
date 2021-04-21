@@ -5,5 +5,5 @@ export = {
   logout: require("./logout"),
   exist: require("./exist"),
   update: require("./update"),
-  //info: require("./info"),
+  info: require("./info"),
 };

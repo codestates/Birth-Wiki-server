@@ -39,9 +39,7 @@ export = async (req, res) => {
           expiresIn: 3600,
         });
         nickName = user.nickName;
-        profileImage = user.profileImage
-          ? `https://server.birthwiki.space/${user.profileImage}`
-          : null;
+        profileImage = user.profileImage;
 
         if (user.refresh) {
           hashRT = user.refresh.hashRT;
@@ -49,7 +47,6 @@ export = async (req, res) => {
           let refreshToken = jwt.sign({ id: user.id }, process.env.SHA_RT);
 
           const refresh = new Refresh();
-          refresh.user = user;
           refresh.token = refreshToken;
           await refresh.save();
 
@@ -111,7 +108,6 @@ export = async (req, res) => {
         await user.save();
 
         let refresh = new Refresh();
-        refresh.user = user;
         refresh.token = refresh_token;
         await refresh.save();
 
@@ -186,7 +182,6 @@ export = async (req, res) => {
 
         const refresh = new Refresh();
         refresh.token = refresh_token;
-        refresh.user = user;
         await refresh.save();
 
         hashRT = crypto
@@ -258,7 +253,6 @@ export = async (req, res) => {
         await user.save();
 
         const refresh = new Refresh();
-        refresh.user = user;
         refresh.token = refresh_token;
         await refresh.save();
 

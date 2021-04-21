@@ -1,5 +1,4 @@
-import dotenv from 'dotenv'
-dotenv.config({path: '/home/lee/codestates/birthwiki/Birth-Wiki-server/.env'})
+import("dotenv/config");
 import { ConnectionOptions } from "typeorm";
 
 const dbconfig: ConnectionOptions = {

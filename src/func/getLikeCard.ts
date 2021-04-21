@@ -40,6 +40,7 @@ export = async (nickName: string) => {
 
         let card: dailyData = {
           id: likeIdArr[i].id,
+          like: true,
           date: likeIdArr[i].date,
           image: likeIdArr[i].image,
           category: field,
@@ -84,6 +85,7 @@ export = async (nickName: string) => {
             -2
           )}`,
           image: likeIdArr[i].image,
+          like: true,
           category: field,
         };
 
@@ -156,8 +158,14 @@ export = async (nickName: string) => {
     await weeklyData(musicIds, "music");
     await weeklyData(movieIds, "movie");
     const likeRecordCards = 1;
-    const recordCards =
-      userRecordData.cards.length > 0 ? userRecordData.cards : null;
+    let recordCards;
+    if (userRecordData.cards.length > 0) {
+      recordCards = userRecordData.cards.map((card) => {
+        return { ...card, like: true };
+      });
+    } else {
+      recordCards = null;
+    }
 
     if (likeCards.length === 0) {
       likeCards = null;

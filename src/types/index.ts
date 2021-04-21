@@ -3,12 +3,14 @@ export interface dailyData {
   date?: string;
   image?: string;
   category?: string;
+  like?: true;
   contents?: [string, string[]][];
 }
 export interface weeklyData {
   id?: number;
   date?: string;
   image?: string;
+  like?: true;
   category?: string;
   korea?: culture;
   world?: culture;

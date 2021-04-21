@@ -76,7 +76,7 @@ export class User extends BaseEntity {
   })
   likeRecords: RecordCard[];
 
-  @OneToOne(() => Refresh)
+  @OneToOne(() => Refresh, refresh => refresh.id)
   @JoinColumn()
   refresh: Refresh;
 }

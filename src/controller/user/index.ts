@@ -6,4 +6,5 @@ export = {
   exist: require("./exist"),
   update: require("./update"),
   info: require("./info"),
+  card: require("./card")
 };

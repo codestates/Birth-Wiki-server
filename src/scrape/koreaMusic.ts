@@ -13,7 +13,8 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     while (today > defaultDay) {
       defaultDay.setDate(defaultDay.getDate() + 7);
     }
-    today.setDate(defaultDay.getDate() - 7);
+    defaultDay.setDate(defaultDay.getDate() - 7);
+    today = defaultDay;
     curYear = today.getFullYear();
     let countDay = new Date(curYear, 0, 1);
     let week = 1;
@@ -72,7 +73,8 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
   };
 
   const searchWeekly: string = weekCount(yyyy, mm, dd);
-  const saveWeekly: string = curYear + weekCount2(yyyy, mm, dd);
+  const saveWeek: string = weekCount2(yyyy, mm, dd);
+  const saveWeekly: string = curYear + saveWeek;
 
   try {
     const K_music = await axios({
@@ -105,11 +107,11 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     oneCase.date = weeklyId;
     await oneCase.save();
 
-    console.log("completed seed Kmusic", yyyy + searchWeekly);
+    console.log("completed seed Kmusic", saveWeekly);
   } catch (e) {
-    console.log("에러주차", yyyy + searchWeekly);
+    console.log("에러 저장", saveWeekly);
     console.log(e);
-    console.log("에러주차", yyyy + searchWeekly);
+    console.log("에러 검색", yyyy + searchWeekly);
   }
 };
 

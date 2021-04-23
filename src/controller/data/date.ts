@@ -11,6 +11,7 @@ import { culture, dailyData, weeklyData } from "../../types";
 
 export = async (req, res) => {
   const { date } = req.body;
+  let curYear;
 
   const weekCount = (yyyy: number, mm: number, dd: number): string => {
     let today = new Date(yyyy, mm - 1, dd);
@@ -18,8 +19,9 @@ export = async (req, res) => {
     while (today > defaultDay) {
       defaultDay.setDate(defaultDay.getDate() + 7);
     }
-    today.setDate(defaultDay.getDate() - 7);
-    let curYear = today.getFullYear();
+    defaultDay.setDate(defaultDay.getDate() - 7);
+    today = defaultDay;
+    curYear = today.getFullYear();
     let countDay = new Date(curYear, 0, 1);
     let week = 1;
     while (today > countDay) {
@@ -30,13 +32,14 @@ export = async (req, res) => {
       }
     }
 
-    return week < 10 ? curYear + "0" + week : curYear + "" + week;
+    return week < 10 ? "0" + week : "" + week;
   };
 
   const year = date.split("-")[0];
   const month = date.split("-")[1];
   const day = date.split("-")[2];
-  const weekly: string = weekCount(Number(year), Number(month), Number(day));
+  const week: string = weekCount(Number(year), Number(month), Number(day));
+  const weekly: string = curYear + week;
 
   const getDaily = async (field: string, dateData: Wiki_daily) => {
     let repo;
@@ -93,14 +96,16 @@ export = async (req, res) => {
         .where(`wiki_${field}.date = :date`, { date: dateData.id })
         .getMany();
 
-      if (stone.length > 0) {
-        let card: weeklyData = {
-          id: dateData.id,
-          date: `${weekly.slice(0, -2)}-${weekly.slice(-2)}`,
-          image: dateData.image,
-          category: field,
-        };
+      let card: weeklyData = {
+        id: dateData.id,
+        date: `${weekly.slice(0, -2)}-${weekly.slice(-2)}`,
+        image: dateData.image,
+        category: field,
+        korea: null,
+        world: null,
+      };
 
+      if (stone.length > 0) {
         stone.forEach((event) => {
           let contents: culture = {
             title: event.title,
@@ -111,11 +116,9 @@ export = async (req, res) => {
           }
           card[event.source] = contents;
         });
-
-        return card;
       }
 
-      return null;
+      return card;
     } catch (err) {
       console.log(`${field} date\n`, err);
     }
@@ -169,7 +172,7 @@ export = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log('date data\n', err);
+    console.log("date data\n", err);
     res.status(400).send({ message: "something wrong" });
   }
 };

@@ -3,9 +3,18 @@ import { Wiki_weekly } from "../entity/Wiki_weekly";
 import("dotenv/config");
 
 const weeklyImg = async (): Promise<any> => {
-  const weekCount = (yyyy, mm, dd) => {
+  let curYear;
+
+  const weekCount = (yyyy: number, mm: number, dd: number): string => {
     let today = new Date(yyyy, mm - 1, dd);
-    let countDay = new Date(yyyy, 0, 1);
+    let defaultDay = new Date(1958, 7, 4);
+    while (today > defaultDay) {
+      defaultDay.setDate(defaultDay.getDate() + 7);
+    }
+    defaultDay.setDate(defaultDay.getDate() - 7);
+    today = defaultDay;
+    curYear = today.getFullYear();
+    let countDay = new Date(curYear, 0, 1);
     let week = 1;
     while (today > countDay) {
       countDay.setDate(countDay.getDate() + 1);
@@ -62,23 +71,25 @@ const weeklyImg = async (): Promise<any> => {
     });
 
     for (let j = 0; j < 25; j++) {
-      let curYear = new Date(1958, 7, (i - 1) * 175 + 4 + j * 7).getFullYear();
-      let curMonth =
-        new Date(1958, 7, (i - 1) * 175 + 4 + j * 7).getMonth() + 1;
-      let curDay = new Date(1958, 7, (i - 1) * 175 + 4 + j * 7).getDate();
-      let curWeek: string = curYear + weekCount(curYear, curMonth, curDay);
+      let targetDate = new Date(1958, 7, (i - 1) * 175 + 4 + j * 7);
+      let targetYear = targetDate.getFullYear();
+      let targetMonth = targetDate.getMonth() + 1;
+      let targetDay = targetDate.getDate();
+      let targetWeek: string = weekCount(targetYear, targetMonth, targetDay);
+      let targetWeekly: string = curYear + targetWeek;
 
       const movie = new Wiki_weekly();
-      movie.date = curWeek;
+      movie.date = targetWeekly;
       movie.fieldName = "movie";
       movie.image = album.data.results[j].urls["regular"];
       await movie.save();
 
       const music = new Wiki_weekly();
-      music.date = curWeek;
+      music.date = targetWeekly;
       music.fieldName = "music";
       music.image = film.data.results[j].urls["regular"];
       await music.save();
+      console.log("completed seed weekly", targetWeekly);
     }
     console.log("completed seed weekly page", i);
   }

@@ -13,7 +13,8 @@ const WMovie = async (yyyy: number): Promise<any> => {
     while (today > defaultDay) {
       defaultDay.setDate(defaultDay.getDate() + 7);
     }
-    today.setDate(defaultDay.getDate() - 7);
+    defaultDay.setDate(defaultDay.getDate() - 7);
+    today = defaultDay;
     curYear = today.getFullYear();
     let countDay = new Date(curYear, 0, 1);
     let week = 1;
@@ -127,7 +128,8 @@ const WMovie = async (yyyy: number): Promise<any> => {
     });
 
     for (let weeklyData of refineData) {
-      let weekly: string = curYear + weekCount(yyyy, 1, weeklyData[0]);
+      let week: string = weekCount(yyyy, 1, weeklyData[0]);
+      let weekly: string = curYear + week;
       let title = weeklyData[1];
       let existPoster = await getRepository(Wiki_movie)
         .createQueryBuilder("wiki_movie")

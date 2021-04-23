@@ -14,7 +14,8 @@ const KMovie = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     while (today > defaultDay) {
       defaultDay.setDate(defaultDay.getDate() + 7);
     }
-    today.setDate(defaultDay.getDate() - 7);
+    defaultDay.setDate(defaultDay.getDate() - 7);
+    today = defaultDay;
     curYear = today.getFullYear();
     let countDay = new Date(curYear, 0, 1);
     let week = 1;
@@ -112,7 +113,9 @@ const KMovie = async (yyyy: number, mm: number, dd: number): Promise<any> => {
       },
     });
 
-    let weekly: string = curYear + weekCount(yyyy, mm, dd);
+    let week = weekCount(yyyy, mm, dd);
+    let weekly: string = curYear + week;
+
     let title = K_movie.data.boxOfficeResult.weeklyBoxOfficeList[0].movieNm;
     let existPoster = await getRepository(Wiki_movie)
       .createQueryBuilder("wiki_movie")

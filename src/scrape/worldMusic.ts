@@ -13,7 +13,8 @@ const WMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     while (today > defaultDay) {
       defaultDay.setDate(defaultDay.getDate() + 7);
     }
-    today.setDate(defaultDay.getDate() - 7);
+    defaultDay.setDate(defaultDay.getDate() - 7);
+    today = defaultDay;
     curYear = today.getFullYear();
     let countDay = new Date(curYear, 0, 1);
     let week = 1;
@@ -28,7 +29,8 @@ const WMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     return week < 10 ? "0" + week : "" + week;
   };
 
-  const weekly: string = curYear + weekCount(yyyy, mm, dd);
+  const week: string = weekCount(yyyy, mm, dd);
+  const weekly: string = curYear + week;
   const month = mm < 10 ? "0" + mm : mm;
   const day = dd < 10 ? "0" + dd : dd;
   const date = `${yyyy}-${month}-${day}`;

@@ -7,6 +7,7 @@ import KMusic from "./koreaMusic";
 import WMusic from "./worldMusic";
 import dailyImg from "./dailyImg";
 import weeklyImg from "./weeklyImg";
+import dbconfig from "../config";
 
 const seed = async () => {
   try {
@@ -15,42 +16,42 @@ const seed = async () => {
     let curDay = new Date().getDate();
     let lastWeek = new Date(curYear, curMonth - 1, curDay - 7).getTime();
 
-    const connection1 = await createConnection();
+    const connection1 = await createConnection(dbconfig);
     console.log("connected");
     console.log("start seed image");
-    await dailyImg();
+    // await dailyImg();
     await weeklyImg();
     console.log("completed seed image");
     await connection1.close();
 
-    const connection2 = await createConnection();
-    console.log("connected");
-    console.log("start seed wiki");
-    for (let i = 1; i < 367; i++) {
-      await wiki(i);
-      await new Promise((resolve) => setTimeout(resolve, 1));
-    }
-    console.log("completed seed wiki");
-    await connection2.close();
+    // const connection2 = await createConnection(dbconfig);
+    // console.log("connected");
+    // console.log("start seed wiki");
+    // for (let i = 1; i < 367; i++) {
+    //   await wiki(i);
+    //   await new Promise((resolve) => setTimeout(resolve, 1));
+    // }
+    // console.log("completed seed wiki");
+    // await connection2.close();
 
-    const connection3 = await createConnection();
-    console.log("connected");
-    console.log("start seed weather");
-    for (let i = 0; i > -1; i++) {
-      let targetYear = new Date(1960, i).getFullYear();
-      let targetMonth = new Date(1960, i).getMonth() + 1;
+    // const connection3 = await createConnection(dbconfig);
+    // console.log("connected");
+    // console.log("start seed weather");
+    // for (let i = 0; i > -1; i++) {
+    //   let targetYear = new Date(1960, i).getFullYear();
+    //   let targetMonth = new Date(1960, i).getMonth() + 1;
 
-      if (curYear === targetYear && curMonth + 1 === targetMonth) {
-        break;
-      } else {
-        await weather(targetYear, targetMonth);
-        await new Promise((resolve) => setTimeout(resolve, 1));
-      }
-    }
-    console.log("completed seed weather");
-    await connection3.close();
+    //   if (curYear === targetYear && curMonth + 1 === targetMonth) {
+    //     break;
+    //   } else {
+    //     await weather(targetYear, targetMonth);
+    //     await new Promise((resolve) => setTimeout(resolve, 1));
+    //   }
+    // }
+    // console.log("completed seed weather");
+    // await connection3.close();
 
-    const connection4 = await createConnection();
+    const connection4 = await createConnection(dbconfig);
     console.log("connected");
     console.log("start seed Kmovie");
     for (let i = 10; i > -1; i = i + 7) {
@@ -68,7 +69,7 @@ const seed = async () => {
     console.log("completed seed Kmovie");
     await connection4.close();
 
-    const connection5 = await createConnection();
+    const connection5 = await createConnection(dbconfig);
     console.log("connected");
     console.log("start seed Wmovie");
     for (let i = 1977; i > -1; i++) {
@@ -82,7 +83,7 @@ const seed = async () => {
     console.log("completed seed Wmovie");
     await connection5.close();
 
-    const connection6 = await createConnection();
+    const connection6 = await createConnection(dbconfig);
     console.log("connected");
     console.log("start seed Wmusic");
     for (let i = 4; i > -1; i = i + 140) {
@@ -108,7 +109,7 @@ const seed = async () => {
     console.log("completed seed Wmovie");
     await connection6.close();
 
-    const connection7 = await createConnection();
+    const connection7 = await createConnection(dbconfig);
     console.log("connected");
     console.log("start seed Kmusic");
     for (let i = 1; i > -1; i = i + 7) {
@@ -132,4 +133,4 @@ const seed = async () => {
   }
 };
 
-//seed();
+seed();

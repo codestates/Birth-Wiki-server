@@ -4,6 +4,7 @@ import {
   Column,
   BaseEntity,
   ManyToOne,
+  ManyToMany,
 } from "typeorm";
 import { User } from "./User";
 
@@ -15,12 +16,18 @@ export class RecordCard extends BaseEntity {
   @Column()
   date: string;
 
-  @Column()
+  @Column({ nullable: true })
   cardImage: string;
 
   @Column()
   cardDesc: string;
 
+  @Column()
+  privacy: boolean;
+
   @ManyToOne(() => User, { cascade: true })
   user: User;
+
+  @ManyToMany(() => User, { cascade: true })
+  users: User[]
 }

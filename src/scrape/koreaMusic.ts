@@ -5,6 +5,30 @@ import { Wiki_music } from "../entity/Wiki_music";
 import { Wiki_weekly } from "../entity/Wiki_weekly";
 
 const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
+  let curYear;
+
+  const weekCount2 = (yyyy: number, mm: number, dd: number): string => {
+    let today = new Date(yyyy, mm - 1, dd);
+    let defaultDay = new Date(1958, 7, 4);
+    while (today > defaultDay) {
+      defaultDay.setDate(defaultDay.getDate() + 7);
+    }
+    defaultDay.setDate(defaultDay.getDate() - 7);
+    today = defaultDay;
+    curYear = today.getFullYear();
+    let countDay = new Date(curYear, 0, 1);
+    let week = 1;
+    while (today > countDay) {
+      countDay.setDate(countDay.getDate() + 1);
+      let countNum = countDay.getDay();
+      if (countNum == 0) {
+        week++;
+      }
+    }
+
+    return week < 10 ? "0" + week : "" + week;
+  };
+
   const weekCount = (yyyy, mm, dd) => {
     let today = new Date(yyyy, mm - 1, dd);
     let countDay = new Date(yyyy, 0, 1);
@@ -48,11 +72,13 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     }
   };
 
-  const weekly: string = weekCount(yyyy, mm, dd);
+  const searchWeekly: string = weekCount(yyyy, mm, dd);
+  const saveWeek: string = weekCount2(yyyy, mm, dd);
+  const saveWeekly: string = curYear + saveWeek;
 
   try {
     const K_music = await axios({
-      url: `http://gaonchart.co.kr/main/section/chart/online.gaon?nationGbn=T&serviceGbn=ALL&targetTime=${weekly}&hitYear=${yyyy}&termGbn=week`,
+      url: `http://gaonchart.co.kr/main/section/chart/online.gaon?nationGbn=T&serviceGbn=ALL&targetTime=${searchWeekly}&hitYear=${yyyy}&termGbn=week`,
     });
 
     const $ = cheerio.load(K_music.data);
@@ -69,7 +95,7 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
 
     let weeklyId = await getRepository(Wiki_weekly)
       .createQueryBuilder("wiki_weekly")
-      .where("wiki_weekly.date = :date", { date: `${yyyy}${weekly}` })
+      .where("wiki_weekly.date = :date", { date: `${saveWeekly}` })
       .andWhere("wiki_weekly.fieldName = :fieldName", { fieldName: "music" })
       .getOne();
 
@@ -81,11 +107,11 @@ const KMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     oneCase.date = weeklyId;
     await oneCase.save();
 
-    console.log("completed seed Kmusic", yyyy + weekly);
+    console.log("completed seed Kmusic", saveWeekly);
   } catch (e) {
-    console.log("에러주차", yyyy + weekly);
+    console.log("에러 저장", saveWeekly);
     console.log(e);
-    console.log("에러주차", yyyy + weekly);
+    console.log("에러 검색", yyyy + searchWeekly);
   }
 };
 

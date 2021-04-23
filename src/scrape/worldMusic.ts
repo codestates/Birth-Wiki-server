@@ -5,9 +5,18 @@ import { Wiki_music } from "../entity/Wiki_music";
 import { Wiki_weekly } from "../entity/Wiki_weekly";
 
 const WMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
-  const weekCount = (yyyy, mm, dd): string => {
+  let curYear;
+
+  const weekCount = (yyyy: number, mm: number, dd: number): string => {
     let today = new Date(yyyy, mm - 1, dd);
-    let countDay = new Date(yyyy, 0, 1);
+    let defaultDay = new Date(1958, 7, 4);
+    while (today > defaultDay) {
+      defaultDay.setDate(defaultDay.getDate() + 7);
+    }
+    defaultDay.setDate(defaultDay.getDate() - 7);
+    today = defaultDay;
+    curYear = today.getFullYear();
+    let countDay = new Date(curYear, 0, 1);
     let week = 1;
     while (today > countDay) {
       countDay.setDate(countDay.getDate() + 1);
@@ -20,7 +29,8 @@ const WMusic = async (yyyy: number, mm: number, dd: number): Promise<any> => {
     return week < 10 ? "0" + week : "" + week;
   };
 
-  const weekly: string = String(yyyy) + weekCount(yyyy, mm, dd);
+  const week: string = weekCount(yyyy, mm, dd);
+  const weekly: string = curYear + week;
   const month = mm < 10 ? "0" + mm : mm;
   const day = dd < 10 ? "0" + dd : dd;
   const date = `${yyyy}-${month}-${day}`;

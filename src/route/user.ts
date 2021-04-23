@@ -18,6 +18,8 @@ router.post("/signout", userController.signout);
 router.post("/login", userController.login);
 router.post("/logout", userController.logout);
 router.get("/exist", userController.exist);
-router.patch("/update", upload.single("profileImage"), userController.update);
+router.post("/update", upload.single("profileImage"), userController.update);
+router.post("/info", userController.info);
+router.post("/card", userController.card);
 
 export = router;
